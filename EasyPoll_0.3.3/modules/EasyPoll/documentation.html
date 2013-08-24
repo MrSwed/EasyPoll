@@ -1,0 +1,176 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+	<title>EasyPoll 0.3 | Module Documentation</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+	<style type="text/css">
+	html, body { margin:0px; padding:0px; }
+	body {
+		font-family:Georgia, Verdana, sans-serif;
+		font-size:13px;
+		color:#222;
+		background-color:#444;
+		text-align:center;
+	}
+
+	h1 {
+		font-size:2em;
+		color:#99F;
+		border:0px dotted #99F;
+		border-bottom-width:2px;
+	}
+
+	h2 {
+		font-size:1.5em;
+		border:0px solid #666;
+		border-bottom-width:1px;
+		margin:1.5em 0px 1em 0px;
+	}
+
+	h3 {
+		font-size:1.2em;
+		margin:0px;
+	}
+
+
+	h4 {
+		margin:0px;
+		font-size:1em;
+	}
+
+	p { margin:0px 0px 1em 0px; }
+
+	a { color:#33F; }
+	a:hover { background-color:#DDF; }
+
+	em { color:#006600; }
+
+	pre, code {
+		background-color:#DDD;
+		font-size:1em;
+		font-family:Courier, monospace;
+		color:#000;
+	}
+
+	pre {
+		margin:0px 0px 1em 0px;
+		padding:8px;
+		border:0px solid #666;
+		border-bottom-width:1px;
+		overflow:auto;
+	}
+
+	ul { margin:0.5em 0px; }
+	ul ul { margin:0px; list-style-type:disc; }
+
+	u.info {
+		display:block;
+		background-color:#FFA;
+		border:1px solid #930;
+		padding:8px;
+		font-weight:bold;
+		color:#930;
+		text-decoration:none;
+	}
+
+	hr {
+		background-color:#FFFFFF !important;
+		border-color:#CCC;
+		border-style:solid;
+		border-width:0px 0px 1px 0px !important;
+		clear:both;
+		color:#FFFFFF !important;
+		height:0px;
+		width:100%;
+		margin:1em 0px;
+	}
+
+	#Container {
+		width:700px;
+		margin:0px auto;
+		text-align:left;
+		padding:20px 30px;
+		background-color:#FFF;
+	}
+    </style>
+</head>
+<body>
+<div id="Container">
+  <h1>EasyPoll 0.3.2 Module Documentation</h1>
+  <p>EasyPoll is a Module/Snippet combination for MODx. Developed by banal, inspired by the Poll Module by garryn.<br />
+    Resource Site: <a href="http://modxcms.com/EasyPoll-1873.html">http://modxcms.com/EasyPoll-1873.html</a><br/>
+Forum thread for support/feedback: <a href="http://modxcms.com/forums/index.php?topic=22981">http://modxcms.com/forums/index.php?topic=22981</a></p>
+  <h3>License</h3>
+  <p>The EasyPoll Module, Snippet and all included Classes/Files are licensed under the <strong>GNU General Public License, version 2</strong>. Please read the license.txt that is bundled with this software or visit: <a href="http://www.gnu.org/licenses/gpl-2.0.html">www.gnu.org/licenses/gpl-2.0.html</a></p>
+  <p>&nbsp;</p>
+  <h2>Contents</h2>
+  <ul><li><a href="#installation"><strong>Installation</strong></a>
+    <ul>
+      <li><a href="#migration">Migration from older Versions</a></li>
+    </ul>
+  </li>
+    <li><a href="#installation"><strong>Language administration</strong></a></li>
+    <li><a href="#polls"><strong>Polls and Choices</strong></a></li>
+    <li><a href="#admin"><strong>Administrative tasks</strong></a></li>
+  </ul>
+  <p>&nbsp;</p>
+  <h2>Installation<a name="installation"></a></h2>
+    <p>If you're reading this, you have probably already downloaded and unpacked the <strong>EasyPoll_0.3.1.zip</strong> File. If not, please do so. Inside the unpacked folder, you'll find a subdirectory named <code>modules</code> and one named <code>snippets</code>. Please copy <code>modules/EasyPoll</code> to your MODx <code>/assets/modules</code> directory. Do the same for the <code>snippets/EasyPoll</code> folder (move it to your snippets directory). For a detailed documentation of the EasyPoll snippet, read documentation.html  inside the <code> snippets/EasyPoll</code> folder.</p>
+  <h3>Dependencies/Requirements</h3>
+    <ul>
+      <li><strong>MODx 0.9.5, 0.9.6</strong> <br />
+        these are the versions this snippet was developed for. might work with other versions as well. Not tested though.</li>
+      <li><strong>PHP 5.1 or higher</strong></li>
+      <li><strong>MySQL 4.1 or higher</strong> (requires UTF-8, Transactions, InnoDB Storage Engine)</li>
+    </ul>
+    <p>&nbsp;</p>
+  <p>To install the module, log in to the MODx Manager and navigate to Modules &gt; Manage Modules. Click on &quot;New Module&quot; and enter &quot;<strong>EasyPoll</strong>&quot; as Module name. Enter &quot;<strong>Version 0.3.1</strong>&quot; as Description. Now copy the contents of <code>modules/EasyPoll/module.php</code> into the Textarea. Make sure to <strong>remove</strong> the <code>&lt;?php</code> tag at the beginning and the <code>?&gt;</code> tag at the end of the Code. Otherwise, the Module will throw a parse Error upon running.</p>
+    <p>After saving your changes, you should see the newly created EasyPoll Module in your list of installed Modules. Click on the Box Icon to the left of the Module name and select <strong>Run module</strong> from the context menu. If everything went fine, you should now see a screen as shown in the following Screenshot:</p>
+    <p><img src="pix/screens0.3/install.png" alt="Installation Screen" width="700" height="294" /></p>
+    <p>Now click the Button to complete the installation of the EasyPoll Manager. The setup will then attempt to create all needed Database Tables. On most machines, this should work just fine. Problems might occur if you don't have sufficient rights to create Database Tables or if the <code>/modules/EasyPoll/setup.sql</code> file is not readable by the install script. If the automatic setup doesn't work for you, you have to create the Database Tables manually. Read the comments in the <code>setup.sql</code> file to get some indication as of how to do this.</p>
+    <p>Once your setup is complete, delete the <code>/modules/EasyPoll/setup.sql</code> File from the server. You won't need it anymore. This concludes the EasyPoll Module installation.</p>
+    <h3>Migration from an older Version of the EasyPoll Module<a name="migration"></a></h3>
+    <p>People encountered Errors when backing up the Database with the MODx Manager and tried to restore it to another Database. This was caused by foreign key contraints which were used in EasyPoll prior to Version 0.3.</p>
+    <p>To migrate an existing EasyPoll installation to 0.3, please run the follwing SQL Commands on your Database (they will remove the existing foreign key constraints). The foreign key logic has been externalized into the application which is not a good design choice but should be easier to migrate.</p>
+    <p><u class="info">Please make sure to replace modx_ with your own Table prefix if necessary!</u></p>
+    <pre>ALTER TABLE `modx_ep_choice` DROP INDEX `pollFK`, DROP FOREIGN KEY `pollFK`;
+
+ALTER TABLE `modx_ep_translation` DROP INDEX `transLangFK`,
+	DROP INDEX `transPollFK`,
+	DROP FOREIGN KEY `transLangFK`,
+	DROP FOREIGN KEY `transPollFK`;
+
+ALTER TABLE `modx_ep_userip` DROP INDEX `ipPollFK`, DROP FOREIGN KEY `ipPollFK`;</pre>
+    <h2>Language administration<a name="languages"></a></h2>
+    <p>The EasyPoll Module was developed for the use in multilingual Websites. You can create Polls for as many Languages as you like. First you have to &quot;create&quot; the Languages you wish to create Polls for. Click on the <strong>Languages</strong> Tab. You should see something like this:</p>
+    <p><img src="pix/screens0.3/lang.png" alt="Language administration" width="700" height="290" /></p>
+    <p>The Screenshot shows the Language Management Screen with two defined Languages. Creation, modification and deletion of Languages should be self-explanatory.</p>
+    <h2>Creating Polls and Choices<a name="polls"></a></h2>
+    <h3>Polls</h3>
+    <p>Navigate to the Polls Tab by clicking it. This is probably the part of the EasyPoll Manager you'll use the most. It should look similar to the Screenshot below (if you're running a fresh install, the list of polls will of course be empty).</p>
+    <p><img src="pix/screens0.3/poll_new.png" alt="Polls" width="700" height="523" /></p>
+    <p>The upper section of the Screen shows your list of polls. The polls are sorted by Start-date (descending). The lower section either shows the form fields to create a new poll or the contents of a selected poll (by clicking on the <strong>Edit</strong> button in the poll list). Here's a short description of the form-fields:</p>
+    <ul>
+      <li><strong>Internal Title</strong> the internal Title of your Poll. This will be shown in the manager only!</li>
+      <li><strong>Start-date</strong> is mandatory and will be set to the current time if left empty. This allows you to specify when the Poll will appear on your Website. There are other factors that could prevent this from happening though. More on this later.</li>
+      <li><strong>End-date</strong> is empty by default and allows you to set the date when the poll should be removed from your Website. You can replace an existing poll by creating a new one as well!</li>
+      <li><strong>Visible</strong> sets the poll to visible/invisible. There are other factors that determine poll visibility though.</li>
+      <li><strong>Translation (Language-Code)</strong> the translation for this polls question. The Number of &quot;Translation&quot; Fields is determined by the number of Languages you created in the Language Tab.</li>
+    </ul>
+  <h3>Choices    </h3>
+    <p>After you created a poll, you can add choices to it. To do so, click the <strong>Edit choices</strong> button.</p>
+    <p><img src="pix/screens0.3/choice.png" alt="Choices" width="700" height="626" /></p>
+    <p>The process of editing Choices is very much the same as for polls. A choice only consists of a <strong>Internal Title</strong> and the <strong>Translations</strong>. You can sort your poll choices with the up- and down-arrows in the choices list.</p>
+    <p>After you created a poll and some choices for it, you should be able to see it on your Website (given that the EasyPoll Snippet is correctly configured and placed in one of your Documents. See the EasyPoll Snippet documentation for further instructions).</p>
+    <p><u class="info">Please note: The following conditions must be fulfilled, before a poll can be displayed on your Website</u></p>
+    <ul>
+      <li><strong>Start-date</strong> must be smaller than or equal to the current Time</li>
+      <li><strong>Visible</strong> checkbox must be checked</li>
+      <li>Questions must be translated in <strong>all Languages</strong></li>
+      <li>The poll must have <strong>at least one Choice</strong>, the Choices have to be translated in all Languages as well.</li>
+    </ul>
+    <h2>Administrative tasks<a name="admin"></a></h2>
+  <p>Currently you can only remove existing IP Locks. This will remove all logged IP Addresses from your Database.</p>
+</div>
+</body>
+</html>

@@ -1,0 +1,433 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+	<title>EasyPoll 0.3.3 | Snippet Documentation</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+	<style type="text/css">
+	html, body { margin:0px; padding:0px; }
+	body {
+		font-family:Georgia, Verdana, sans-serif;
+		font-size:13px;
+		color:#222;
+		background-color:#444;
+		text-align:center;
+	}
+
+	h1 {
+		font-size:2em;
+		color:#99F;
+		border:0px dotted #99F;
+		border-bottom-width:2px;
+	}
+
+	h2 {
+		font-size:1.5em;
+		border:0px solid #666;
+		border-bottom-width:1px;
+		margin:1.5em 0px 1em 0px;
+	}
+
+	h3 {
+		font-size:1.2em;
+		margin:0px;
+	}
+
+
+	h4 {
+		margin:0px;
+		font-size:1em;
+	}
+
+	p { margin:0px 0px 1em 0px; }
+
+	a { color:#33F; }
+	a:hover { background-color:#DDF; }
+
+	em { color:#006600; }
+
+	pre, code {
+		background-color:#DDD;
+		font-size:1em;
+		font-family:Courier, monospace;
+		color:#000;
+	}
+
+	pre {
+		margin:0px 0px 1em 0px;
+		padding:8px;
+		border:0px solid #666;
+		border-bottom-width:1px;
+		overflow:auto;
+	}
+
+	ul { margin:0.5em 0px; }
+	ul ul { margin:0px; list-style-type:disc; }
+
+	u.info {
+		display:block;
+		background-color:#FFA;
+		border:1px solid #930;
+		padding:8px;
+		font-weight:bold;
+		color:#930;
+		text-decoration:none;
+	}
+
+	hr {
+		background-color:#FFFFFF !important;
+		border-color:#CCC;
+		border-style:solid;
+		border-width:0px 0px 1px 0px !important;
+		clear:both;
+		color:#FFFFFF !important;
+		height:0px;
+		width:100%;
+		margin:1em 0px;
+	}
+
+	#Container {
+		width:700px;
+		margin:0px auto;
+		text-align:left;
+		padding:20px 30px;
+		background-color:#FFF;
+	}
+    </style>
+</head>
+<body>
+<div id="Container">
+  <h1>EasyPoll 0.3.3 Snippet Documentation</h1>
+  <p>EasyPoll is a Module/Snippet combination for MODx. Developed by banal, inspired by the Poll Module by garryn.<br />
+  Resource Site: <a href="http://modxcms.com/EasyPoll-1873.html">http://modxcms.com/EasyPoll-1873.html</a><br/>
+  Forum thread for support/feedback: <a href="http://modxcms.com/forums/index.php?topic=22981">http://modxcms.com/forums/index.php?topic=22981</a></p>
+  <h2>Contents</h2>
+  <ul><li><a href="#installation"><strong>Installation</strong></a></li>
+    <li><a href="#parameters"><strong>List of parameters</strong></a></li>
+    <li><a href="#templates"><strong>Templates</strong></a></li>
+    <li><a href="#tfunctions"><strong>Template Functions</strong></a></li>
+    <li><a href="#examples"><strong>Usage examples</strong></a>
+      <ul>
+        <li><a href="#ex_basics">Basics</a></li>
+        <li><a href="#ex_archive">Poll Archive</a></li>
+        <li><a href="#ex_jscallback">JavaScript Callback</a></li>
+        <li><a href="#ex_tfunctions">Template Function</a></li>
+      </ul>
+    </li>
+  </ul>
+  <h2>Installation<a name="installation"></a></h2>
+    <p>First, you should install the EasyPoll Module for MODx. Please read the Module Documentation (to be found in <code>modules/EasyPoll</code>) for installation instructions.</p>
+    <p>In the MODx Manager, create a new Snippet by navigating to: Resources &gt; Manage Resources &gt; Snippets. Click on &quot;New snippet&quot;. You may use any name for the Snippet, although i encourage you to enter &quot;EasyPoll&quot; as Snippet name. Enter &quot;Version 0.3.1&quot; into the Description field.</p>
+    <p>Copy the contents of <code>snippets/EasyPoll/snippet.php</code> and paste them into the &quot;Snippet code&quot; Textarea (replace the existing content).</p>
+  <h3>Dependencies</h3>
+    <ul>
+      <li><strong>MODx 0.9.5, 0.9.6</strong>
+        <br />
+      these are the versions this snippet was developed for. might work with other versions as well. Not tested though.</li>
+        <li><strong>MooTools with XHR module</strong> only required when using AJAX functionality. <a href="http://mootools.net">mootools.net</a></li>
+        <li><strong>PHP 5.1 or higher</strong></li>
+        <li><strong>MySQL 4.1 or higher</strong></li>
+        <li><strong>EasyPoll Module</strong> must be installed</li>
+    </ul>
+    <p>&nbsp;</p>
+    <h3>License</h3>
+    <p>The EasyPoll Module, Snippet and all included Classes/Files are licensed under the <strong>GNU General Public License, version 2</strong>. Please read the license.txt that is bundled with this software or visit: <a href="http://www.gnu.org/licenses/gpl-2.0.html">www.gnu.org/licenses/gpl-2.0.html</a></p>
+  <h2>List of parameters<a name="parameters"></a></h2>
+  <h4>&amp;pollid</h4>
+    <p>Poll ID to be used. If not set, the snippet will choose the most recent Poll (must be active and fully translated)!<br />
+    You are encouraged to omit this parameter, since it opens the possibility for you to administrate polls in the manager and have them automatically updated on your site. <em><br />
+    defaults to false</em></p>
+  <h4>&amp;lang</h4>
+    <p>The language to use for snippet translations. There must me a translation file for this language in the EasyPoll/lang Folder. Currently available languages: <strong>English, German, Dutch, French, Italian</strong><em><br />
+    defaults to 'en'</em></p>
+  <h4>&amp;easylang</h4>
+    <p>The language for poll questions and answers (as set up in EasyPoll Module).<br />
+      <em> defaults to the <strong>&amp;lang</strong> param</em></p>
+  <h4>&amp;onevote</h4>
+    <p>Boolean indicating if a user is allowed to vote just once.<br />
+      <em>defaults to false</em></p>
+    <h4>&amp;useip</h4>
+    <p>Boolean indicating if we should log the users ip to allow just one vote.<br />
+      <em>defaults to false</em></p>
+  <h4>&amp;ovtime</h4>
+    <p>Cookie expiration time.<br />
+      <em>defaults to one week</em></p>
+  <h4>&amp;noajax</h4>
+    <p>Allows to disable AJAX request sending. If set to true, all added JavaScript functionality will be turned off. This is usually not required, since the Snippet also works on Browsers without JavaScript, even when this option isn't set. Only use this if you want to  disable JavaScript functionality even on Browsers that would support it.<br />
+      <em>defaults to false</em></p>
+  <h4>&amp;css</h4>
+    <p>Additional Stylesheet to load.<br />
+      <em>defaults to none/false</em></p>
+  <h4>&amp;accuracy</h4>
+    <p>accuracy of percentage rounding. this specifies the number of digits after the decimal point.<br />
+      <em>defaults to 1</em></p>
+  <h4>&amp;votesorting</h4>
+  	<p>sorting order of the votes. This only has a effect on the vote results and archive output, not on the voting options. Options will always appear as configured in the EasyPoll Module. Valid options are: Sorting, Votes, Sorting ASC, Sorting DESC, Votes ASC, Votes DESC.<br/>
+  	<em>defaults to <strong>Sorting ASC</strong></em></p>
+    <h4>&amp;archive</h4>
+    <p>Create a poll archive instead of the regular output. Setting this parameter to true will render some of the other<br />
+      parameters useless. These parameters have no meaning when setting archive to true: &amp;pollid, &amp;onevote, &amp;useip, &amp;ovtime, &amp;tplVoteOuter, &amp;tplVote, &amp;tplError, &amp;identifier, &amp;jscallback, &amp;noajax<br />
+      The customjs parameter can be used to include JavaScript code to create special effects.<br />
+      <em>defaults to false</em></p>
+    <h4>&amp;skipfirst</h4>
+    <p>This parameter is only effective in archive mode. If set to true, the first poll from the poll list (the one that is usually active) will be excluded from output. This way you can exclude a currently running poll from the archive output.<br />
+      <em>defaults to false</em></p>
+    <h4>&amp;tplVoteOuter</h4>
+    <p>Outer container template for votes. Look at the <a href="#templates">Templates section</a> for parameter details.<br />
+      <em>Default:</em>
+<pre>&lt;div class=&quot;pollvotes&quot;&gt;<br />
+	&lt;h3&gt;[+question+]&lt;/h3&gt;<br />
+	&lt;ul&gt;[+choices+]&lt;/ul&gt;<br />
+	[+submit+] [+results+]<br />
+&lt;/div&gt;</pre></p>
+    <h4>&amp;tplVote</h4>
+    <p>Template for a single voting option.<br />
+      <em>Default:</em><br />
+<pre>&lt;li&gt;[+select+] [+answer+]&lt;/li&gt;</pre></p>
+  <h4>&amp;tplResultOuter</h4>
+    <p>Outer container template for results.<br />
+      <em>Default:</em>
+    <pre>
+&lt;div class=&quot;pollresults&quot;&gt;<br />
+    &lt;h3&gt;[+question+]&lt;/h3&gt;<br />
+    &lt;ul&gt;[+choices+]&lt;/ul&gt;<br />
+    &lt;p&gt;[+totaltext+]: [+totalvotes+]&lt;/p&gt;<br />
+&lt;/div&gt;</pre></p>
+  <h4>&amp;tplResult</h4>
+    <p>Template for a single result.<br />
+      <em>Default:</em>
+    <pre>
+&lt;li&gt;<br />
+    &lt;strong&gt;[+answer+]&lt;/strong&gt; ([+votes+] / [+percent+]%)<br />
+    &lt;div class=&quot;easypoll_bar&quot;&gt;<br />
+    	&lt;div class=&quot;easypoll_inner&quot; style=&quot;width:[+percent_int+]%&quot;&gt;&lt;/div&gt;<br />
+    &lt;/div&gt;<br />
+&lt;/li&gt;</pre></p>
+  <h4>&amp;tplError</h4>
+    <p>Template that is used to display a error message.<br />
+      <em>Default:</em><br />
+<pre>&lt;div class=&quot;easypoll_error&quot;&gt;[+message+]&lt;/div&gt;</pre></p>
+  <h4>&amp;identifier</h4>
+    <p>The element identifier that is used for the JS commands. Change this to something unique every time, if you plan to use multiple polls on one page. Otherwise this can be left at its default value.<br />
+  <em>defaults to &quot;easypoll&quot;</em></p>
+  <h4>&amp;nojs</h4>
+    <p>Boolean. Suppress inclusion of mootools. Use this if mootools is already included.<br />
+      <em>defaults to false</em></p>
+  <h4>&amp;customjs</h4>
+    <p>Include a custom javascript code (eg. your custom callback function definiton). This can be a path to a JS File or a script wrapped in <code>&lt;script&gt;</code> tags. You can specify a chunk as well, use <code>@CHUNK &lt;chunkname&gt;</code> for this purpose.<br />
+      Please note: If you're not using <code>&lt;script&gt;</code> Tags, your Chunk content will be interpreted as file path, not as actual JavaScript code.<br />
+      <em>defaults to none</em></p>
+  <h4>&amp;jscallback</h4>
+    <p>This can be any javascript function name. It will be called first when the AJAX loading starts and a second time when loading is complete.<br />
+      You'll get 2 parameters for that function. The first one is the response. The response is <code>false</code> when loading has just started and contains the loaded HTML if loading is done.<br />
+      The second parameter is the id of the poll element. This is the same as specified in <strong>&amp;identifier</strong> and will help you to route the responses to the correct poll if you're using multiple polls on one page.<br />
+      <em>defaults to &quot;EasyPoll_DefaultCallback&quot; which is defined in  EasyPoll/script/EasyPollAjax.js</em></p>
+  <h4>&amp;showexception</h4>
+    <p>If set to true, even &quot;invisible&quot; exceptions like the one occurring if no poll was found will be shown!<br />
+  This is useful and recommended for testing, should not be used in production environment though.<br />
+  <em>defaults to false</em></p>
+    <h2>Templates<a name="templates"></a></h2>
+  <p><u class="info">Important: Only Chunks are currently supported as Templates!</u></p>
+  <h3>Template Placeholders</h3>
+  <p>Templates allow you to customize the appearance of your Polls. If these static templates aren't flexible enough for your needs, please have a look at the <a href="#tfunctions">Template Functions</a> section.</p>
+  <hr/>
+  <h4>tplVoteOuter</h4>
+  <p>The wrapper template for the vote display. Should at least contain the question, choices and the submit button.<br />
+  Please note that  <strong>tplVoteOuter</strong>  is always wrapped in a <code>div</code> with <code>id=&quot;&lt;<strong>&amp;identifier</strong>&gt;&quot;</code> and<code> class=&quot;easypoll&quot;</code>, no matter what you put in your Template. This is to ensure functionality of the poll snippet.</p>
+  <p><code>[+question+]</code> = the title/question of the poll.<br />
+      <code>[+choices+]</code> = the vote options/choices.<br />
+      <code>[+submit+]</code> = the submit button will be injected there. Don't forget this or the user won't be able to vote.<br />
+      <code>[+results+]</code> = button to show results. Not mandatory, since results will be shown upon voting.</p>
+      <hr/>
+  <h4>tplResultOuter</h4>
+  <p>The wrapper template for the results display. Should at least contain the question and choices placeholder.</p>
+  <p><code>[+question+]</code> = the title/question of the poll.<br />
+      <code>[+totalvotes+]</code> = the total amount of votes that were cast for this poll.<br />
+      <code>[+totaltext+]</code> = the text. eg. &quot;Total votes&quot; in english.<br />
+      <code>[+choices+]</code> = the choice results.</p>
+      <hr/>
+  <h4>tplVote</h4>
+  <p>This is the template for a single voting option. You should use both placeholders here.</p>
+  <p><code>[+select+]</code> = the radio button. Don't forget this or the user won't be able to vote at all!<br />
+    <code>[+answer+]</code> = the answer. Don't forget this. Please :)</p>
+    <hr/>
+  <h4>tplResult</h4>
+  <p>The template for a single result.</p>
+  <p><code>[+answer+]</code> = the answer.<br />
+    <code>[+percent+]</code> = the percent value of this result (without %, accuracy according to <strong>&amp;accuracy</strong> param).<br />
+    <code>[+percent_int+]</code> = integer value of the percentage. Can be used for CSS styling. eg. <code>width:[+percent_int+]%;</code><br />
+    <code>[+votes+]</code> = the number of votes that went in for this question/option.</p>
+    <hr/>
+  <h4>tplError</h4>
+  <p>Template for a error message, that might be returned by the EasyPoll Snippet.</p>
+  <p><code>[+message+]</code> = The error message.</p>
+  <hr/>
+  <h2>Template Functions<a name="tfunctions"></a></h2>
+  <p>Template Functions give you full control over your  EasyPoll output. Instead of using chunks, you can define a php function that creates the output. You can mix Template Functions and regular Chunk-Templates.<br />
+  Example: Imagine you want a poll result, where the color of the bar changes with the amount of votes that were cast. That's where chunk based templates stop and template functions start to shine.    </p>
+  <h3>Usage</h3>
+  <p>If you already have a function defined somewhere in the global php scope, simply set one of the Template Parameters to: <code>@FUNCTION &lt;YourFunctionName&gt;</code><br />
+    If you want to define the function directly in a chunk, use <code>@FUNCTIONCHUNK &lt;ChunkWithFunctionName&gt;</code>. The Chunk content will then be parsed by the snippet. The first function to be found inside the chunk will be used as template function.</p>
+  <p>Please note, that every function must have <strong>at least</strong> 1 parameter. This parameter will be a associative array with the keys named like the placeholders. Eg. A function for <strong>tplResult</strong> will get a array with the keys <code>answer</code>, <code>percent</code>, <code>percent_int</code>, and <code>votes</code>. As  second Parameter, the template identifier will be given (eg. <code>tplResult</code>). This allows you to write just one function and handle all calls within this single function (by using a <code>switch</code> statement on the second parameter). <strong>The function must return the composed String output for the requested Template!</strong></p>
+  <p>For a detailed example of a Template Function, read the <a href="#ex_tfunctions">Template Function usage example</a>.</p>
+  <h2>Usage examples<a name="examples"></a></h2>
+  <h3>Basics<a name="ex_basics"></a></h3>
+  <p>The most basic way of calling the Snippet is the following:</p>
+  <pre>[!EasyPoll!]</pre>
+  <p>Usually you'll need some more parameters though. For testing it is recommended to display all exceptions for debugging. Here's an example to test a specific poll (in this case, the poll with id 1):</p>
+  <pre>[!EasyPoll? &amp;pollid=`1` &amp;showexception=`1`!]</pre>
+  <p>On to a more complex example. Now we want the Poll to be shown in a specific Language and load a custom Stylesheet (in this example, the poll.css that comes with the Snippet) for it. Since we already include mootools in our page, we can prevent the snippet from loading it a second time with the <strong>&amp;nojs</strong> parameter. We prevent the User from voting multiple times by setting the <strong>&amp;onevote</strong> and <strong>&amp;useip</strong> Parameters.</p>
+  <pre>[!EasyPoll? &amp;lang=`de` &amp;onevote=`1` &amp;useip=`1` &amp;nojs=`1` &amp;css=`assets/snippets/EasyPoll/poll.css`!]</pre>
+  <p>If you want to display multiple Polls on one page, you have to set the <strong>&amp;identifier</strong> Parameter to a unique value for every poll. Here's an example that will allow you to have 2 polls on one single Page. Since we want two different polls to be displayed, we call them explcitly by specifying the pollid for each of them. The first poll will only be votable once, the second one doesn't have this limitation. To prevent multiple inclusions of mootools, we set <strong>&amp;nojs</strong> to true on one of the Snippet calls.</p>
+  <pre>[!EasyPoll? &amp;pollid=`1` &amp;identifier=`MyPoll_1` &amp;onevote=`1` &amp;useip=`1`!]
+
+&lt;!-- some site content? --&gt;
+
+[!EasyPoll? &amp;pollid=`2` &amp;identifier=`MyPoll_2` &amp;nojs=`1`!]  </pre>
+  <h3>Poll Archive<a name="ex_archive"></a></h3>
+  <p>You're creating polls regularly and want to have an archive of older polls on your Website? Easy!<br />
+  In the following example, we're generating a list of old polls and skip the first one on the list with the <strong>&amp;skipfirst</strong> parameter (since this is our currently running poll). Please note, that this will output the polls with the default Templates if not specified otherwise.</p>
+  <pre>[!EasyPoll? &amp;archive=`1` &amp;skipfirst=`1`!]</pre>
+  <h3>JavaScript Callback<a name="ex_jscallback"></a></h3>
+  <p>Simply replacing the Voting-Screen with the Results is not good enough? Fancy something flashy? Here are two examples where we make use of the custom JavaScript Callback functions.</p>
+  <h4>Easy, for Testing</h4>
+  <p>To get started, we want to test if the JavaScript Callback actually works. Create a new Chunk in MODx, name it <strong>CallbackTest</strong> and fill it with the following Code:</p>
+  <pre>&lt;script type=&quot;text/javascript&quot;&gt;
+&lt;!--
+var MyCallback = function(response, id){
+    if(response == false){
+        alert('hey, i just sent something');
+        $(id + &quot;submit&quot;).disabled = true;
+    } else {
+        alert('hey, i just received something');
+        $(id).setHTML(response);
+    }
+}
+--&gt;
+&lt;/script&gt;</pre>
+  <p>Now, place the following Snippet call in one of your Documents:</p>
+  <pre>[!EasyPoll? &amp;customjs=`@CHUNK CallbackTest` &amp;jscallback=`MyCallback`!]</pre>
+  <p>This will load the JavaScript Code from the <code>CallbackTest</code> Chunk into your HTML Page and use the <code>MyCallback</code> function for callbacks.</p>
+  <p>If you vote, you should get a JavaScript alert saying &quot;<strong>hey, i just sent something</strong>&quot;, shortly followed by another alert, saying &quot;<strong>hey, i just received something</strong>&quot;.<br />
+  This isn't exactly useful, but hopefully it shows how the JS Callbacks work. For a more sophisticated example, please read the next section.</p>
+  <h4>Adding some mootools effects</h4>
+  <p>In the following example we will  use  the mootools Effects to slide in the results after voting. Please make sure, you're using a mootools version that has the Fx.Style built in (<a href="http://docs.mootools.net/Effects/Fx-Style.js">docs.mootools.net/Effects/Fx-Style.js</a>).</p>
+  <p>I suggest you put the following Code into a separate JavaScript File for easier editing/maintenance. Let's place it in <code>/assets/js/PollCB.js</code></p>
+  <pre>var PollCB = function(request, id){
+    var elem = $(id);
+    var size = elem.getSize();
+    if(request == false){
+        $(id + 'submit').disabled = true;
+        var newElem = new Element('div', {
+            'class': 'loading',
+            'styles': { 'height': size.size.y }
+        });
+        elem.empty();
+        newElem.injectInside(elem);
+    } else {
+        elem.empty();
+        var newElem = new Element('div');
+        newElem.setHTML(request);
+        newElem.setStyles({
+            'position': 'relative',
+            'top': '-500px',
+            'visibility':'hidden'
+        });
+        newElem.injectTop(elem);
+        var s = newElem.getSize();
+        elem.setStyles({
+            'height': s.size.y,
+            'position': 'relative',
+            'overflow': 'hidden'
+        });
+
+
+        var slider = new Fx.Style(newElem, 'top', {duration:1000});
+        slider.start(-s.size.y, 0);
+        newElem.setStyle('visibility', 'visible');
+    }
+};</pre>
+  <p>When a vote is cast, this script will replace the &quot;voting screen&quot; with a loading animation (by creating an empty div with <code>class=&quot;loading&quot;</code>) and as soon as loading is complete, the results will slide in from the top. It is up to you, how you style the loading div. Personally i add a loading animation as background image. In most of the cases, you won't even see the loading div though.</p>
+  <p>It's possibly a good idea to define some styles for the Poll, either use the bundled <code>poll.css</code> or create your own definition. Then you call the Snippet with the following parameters:</p>
+  <pre>[!EasyPoll? &amp;customjs=`assets/js/PollCB.js` &amp;jscallback=`PollCB` &amp;css=`yourCSS.css`!]</pre>
+
+  <p>That's it. Simple but effective.</p>
+  <h3> Template Function<a name="ex_tfunctions"></a></h3>
+  <p>In this example, we make use of a Template Function to change the color of the bars from Red (0% Votes) to Green (100% Votes). In addition, we place the percentage label inside the bar. If the colored area of the bar is bigger than 50%, the label will be placed inside, otherwise outside the colored area. We do this, by defining a Template Function for the <strong>&amp;tplResult</strong> Parameter. We can do this for any of the template Parameters if we like!</p>
+  <p>First we need a <strong>minimal</strong> CSS definition. Feel free to alter/extend. In this example we place it in <code>/assets/files/epoll.css</code></p>
+  <pre>.pollresults li {
+    clear:both;
+    width:100%;
+}
+.easypoll fieldset {
+    border:0px;
+    margin:0px;
+    padding:0px;
+}
+.easypoll_bar {
+    height:1.2em;
+    background-color:#CCC;
+    float:left;
+    width:100%;
+    margin-bottom:0.5em;
+}
+.easypoll_bar strong {
+    float:left;
+    display:block;
+    padding:2px 3px;
+    font-size:0.9em;
+}
+.easypoll_inner {
+    height:100%;
+    float:left;
+    background-color:#000;
+}
+</pre>
+  <p>Now we create our Template Function. Place the following Code in a new Chunk and name it &quot;<strong>PollFunction</strong>&quot;</p>
+  <pre>// this will print a custom result bar
+function EasyPoll_PrintResult(&amp;$values, $handle){
+    $perc = $values['percent_int'];
+    $col = HSB2HEX($perc * 1.1, 100, 100);
+    $buf = '&lt;li&gt;&lt;strong&gt;'. $values['answer'] .'&lt;/strong&gt; [' . $values['votes'] . ']'.
+           '&lt;div class=&quot;easypoll_bar&quot;&gt;&lt;div class=&quot;easypoll_inner&quot; style=&quot;width:'.
+           $perc .'%; background:#'. $col .'&quot;&gt;';
+    if($perc &gt; 50){
+        // place number inside bar
+        $buf .= '&lt;strong&gt;'. $values['percent'] .'%&lt;/strong&gt;&lt;/div&gt;';
+    } else {
+        // place number outside bar
+        $buf .= '&lt;/div&gt; &lt;strong&gt;'. $values['percent'] .'%&lt;/strong&gt;';
+    }
+    $buf .= '&lt;/div&gt;&lt;/li&gt;';
+    return $buf;
+}
+
+function HSB2HEX($h, $s, $v){
+    $h = round($h)%360;
+    $s = round($s*2.55);
+    $v = round($v*2.55);
+    if($s == 0){
+    	$r = $g = $b = $v;
+    } else {
+        $t1 = $v;
+        $t2 = (255-$s) * $v/255;
+        $t3 = ($t1 - $t2) * ($h%60)/60;
+        if($h&lt;60) {$r=$t1; $b=$t2; $g=$t2+$t3; }
+        else if($h&lt;120) {$g=$t1; $b=$t2; $r=$t1-$t3; }
+        else if($h&lt;180) {$g=$t1; $r=$t2; $b=$t2+$t3; }
+        else if($h&lt;240) {$b=$t1; $r=$t2; $g=$t1-$t3; }
+        else if($h&lt;300) {$b=$t1; $g=$t2; $r=$t2+$t3; }
+        else if($h&lt;360) {$r=$t1; $g=$t2; $b=$t1-$t3; }
+        else {$r = $g = $b =0; }
+    }
+    return sprintf('%02X%02X%02X', $r, $g, $b);
+}</pre>
+  <p>As you can see, we have 2 function definitions. One that is our actual output function (<code>EasyPoll_PrintResult</code>) and one helper function (<code>HSB2HEX</code>) that generates RGB Hex values from HSB input.<br />
+  It doesn't matter how you name your functions, you should be aware of two important things though:<br />
+      <strong>The first function definition will always be called by the snippet. In this case, it's EasyPoll_PrintResult</strong>!<br />
+      <strong>Make sure, your function name is unique and not used yet. Most likely a prefixed function name like the one above will do fine.</strong></p>
+  <p>Now we're ready to put the Snippet call somewhere in our Document and we're done. If it doesn't work, use the <strong>&amp;showexception</strong> parameter to get some debugging information.</p>
+  <pre>[!EasyPoll? &amp;css=`assets/files/epoll.css` &amp;tplResult=`@FUNCTIONCHUNK PollFunction`!]
+</pre>
+</div>
+</body>
+</html>

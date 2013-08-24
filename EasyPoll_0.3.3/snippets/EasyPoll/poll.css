@@ -1,0 +1,55 @@
+/*
+ * simple demo stylesheet for the EasyPoll Snippet v.0.2
+ */
+
+@CHARSET "UTF-8";
+
+.pollvotes, .pollresults {
+    max-width:200px;
+    background-color:#cfe295;
+    border:1px solid #79a100;
+    padding:10px;
+}
+
+.pollvotes h3, .pollresults h3 {
+    margin-top:0px;
+    font-size:1.4em;
+    color:#618200;
+}
+
+.pollvotes ul, .pollresults ul {
+    padding:0px 4px 0px 16px;
+}
+
+.easypoll fieldset {
+    border:0px;
+    margin:0px;
+    padding:0px;
+}
+
+.easypoll input.pollbutton {
+    border:1px solid #79a100;
+    color:#618200;
+    background-color:#d8e6af;
+}
+
+.easypoll input:hover {
+    background-color:#FFF;
+}
+
+.easypoll_bar {
+    height:8px;
+    background-color:#FFF;
+}
+
+.easypoll_inner {
+    height:100%;
+    background:url('../../templates/modxhost/images/foot_4x82.jpg') repeat-x top left;
+    background-color:#618200;
+}
+
+.easypoll_error {
+    border:1px solid #600;
+    background-color:#FAA;
+    padding:8px;
+}

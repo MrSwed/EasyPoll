@@ -1,0 +1,169 @@
+/*
+* Easy Poll Styles
+*/
+.container {
+    padding:10px;
+    height:auto;
+}
+
+.installbox { font-size:1.3em; }
+
+.installbox, .warning {
+    border:1px solid #F90;
+    background-color:#FFA;
+    padding:5px;
+}
+
+.splash h1, .splash p { margin:0.5em 0em; }
+
+.warning {
+    background-image:url('../../../../manager/media/style/MODx/images/icons/event2.gif');
+    background-repeat:no-repeat;
+    background-position:10px center;
+    padding-left:35px;
+    margin-bottom:1em;
+}
+
+.installbox input, .button, .button:hover, input.button {
+    padding:2px 5px 2px 24px;
+    background-image:url('../../../../manager/media/style/MODx/images/icons/b011.gif');
+    background-repeat:no-repeat !important;
+    background-position:4px center !important;
+}
+
+.actionButtons a {
+    float:left;
+}
+
+.button, input.button {
+    padding:3px 5px 2px 24px !important;
+    border:1px solid #CCC !important;
+    background-color:#FFF;
+    cursor:pointer;
+    margin-right:5px;
+    color:#000 !important;
+}
+
+.button:hover {
+    height:auto !important;
+}
+
+.actionButtons .edit, .actionButtons .edit:hover {
+    background-image:url('../../../../manager/media/style/MODx/images/icons/b01.gif');
+}
+
+.actionButtons .delete, .actionButtons .delete:hover {
+    background-image:url('../../../../manager/media/style/MODx/images/icons/b03.gif');
+}
+
+.actionButtons .back, .actionButtons .back:hover, .actionButtons .stop, .actionButtons .stop:hover{
+    background-image:url('../../../../manager/media/style/MODx/images/icons/prev.gif');
+}
+
+.actionButtons .save, .actionButtons .save:hover {
+    background-image:url('../../../../manager/media/style/MODxLight/images/icons/ed_save.gif');
+}
+
+.actionButtons .cancel, .actionButtons .cancel:hover {
+    background-image:url('../../../../manager/media/style/MODx/images/icons/close.gif');
+}
+
+.actionButtons .confirm, .actionButtons .confirm:hover {
+    background-image:url('../../../../manager/media/style/MODx/images/icons/b011.gif');
+}
+
+.actionButtons .choice, .actionButtons .choice:hover {
+    background-image:url('../../../../manager/media/style/MODx/images/icons/menu_settings16.gif');
+}
+
+.actionButtons .clear, .actionButtons .clear:hover {
+    background-image:url('../../../../manager/media/style/MODxLight/images/icons/trash.png');
+}
+
+
+
+input.disabled, .button.disabled {
+    background-color:#CCC !important;
+    color:#666 !important;
+}
+
+a.translation_ok, a.translation_miss, .item_active, .editdate, .moveup, .movedown {
+    width:16px;
+    height:16px;
+    display:block;
+    background:url('../../../../manager/media/style/MODx/images/icons/event2.gif') no-repeat center center;
+}
+
+a.translation_ok {
+    background-image:url('../../../../manager/media/style/MODxLight/images/icons/save.gif');
+}
+
+.item_active {
+    background-image:url('../../../../manager/media/style/MODxLight/images/icons/select.gif');
+}
+
+.editdate {
+    float:left;
+    margin-left:10px;
+    cursor:pointer;
+    background-image:url('../../../../manager/media/style/MODxLight/images/icons/cal.gif');
+}
+
+.moveup {
+    background-image:url('../../../../manager/media/style/MODxLight/images/icons/arrow_up.png');
+}
+
+.movedown {
+    background-image:url('../../../../manager/media/style/MODxLight/images/icons/arrow_down.png');
+}
+
+a.translation_ok span, a.translation_miss span, .item_active span, .editdate span, .moveup span, .movedown span { display:none; }
+
+.formtable { width:100%; }
+.formtable th { text-align:left; }
+.formtable input { float:left; }
+
+.grid .active { background-color:#dff7a8; }
+
+.error, .info {
+    padding:5px;
+    border:1px solid #600;
+    background-color:#FAA;
+    margin-bottom:1em;
+}
+
+.info {
+    border:1px solid #066;
+    background-color:#AFF;
+}
+.success p, .error p, .warning p, .info p { color:#000; font-weight:normal; width:75%; font-size:1.2em; }
+
+.error .button, .warning .button, .info .button {
+    background-color:#FFF;
+    margin-right:1em;
+}
+
+a.tab { text-decoration:none !important; }
+
+.message { float:left; clear:both; }
+.message .msg { float:left; width:100%; }
+a.messageclose span { display:none; }
+a.messageclose {
+    display:block;
+    float:left;
+    width:16px;
+    height:16px;
+    background:url('../../../../manager/media/style/MODx/images/icons/close.gif') no-repeat center center;
+}
+
+.tab-page .sectionBody, .tab-page .sectionHeader {
+    margin:0px;
+}
+
+.grid th.gridHeader {
+    text-align:left !important;
+    white-space:nowrap !important;
+    padding:3px 5px 1px 5px;
+    height:auto;
+}
+

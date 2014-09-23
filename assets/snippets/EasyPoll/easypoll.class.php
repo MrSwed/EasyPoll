@@ -1,4 +1,5 @@
 <?php
+
 /**
  * ------------------------------------------------------------------------------
  * EasyPoll Vote Class
@@ -21,30 +22,58 @@ class EasyPoll
      * @var DocumentParser
      */
     protected $modx;
-    // configuration array
-    private $config;
-    // language specific strings array
-    private $lang;
-    // flag indicating if the user voted already
-    private $voted;
-    // the poll DB id
-    private $pollid;
-    // the language id
-    private $langid;
-    // flag if init is done
-    private $isInit;
-    // flag if in archive mode
-    private $archive;
-
-    // database tables
-    private $tbl_poll;
-    private $tbl_choice;
-    private $tbl_ip;
-    private $tbl_lang;
-    private $tbl_trans;
-
-    // templates
-    private $templates;
+    /**
+     * @var array Configuration array
+     */
+    protected $config;
+    /**
+     * @var array Language specific strings array
+     */
+    protected $lang;
+    /**
+     * @var bool Flag indicating if the user voted already
+     */
+    protected $voted;
+    /**
+     * @var int The poll DB ID
+     */
+    protected $pollid;
+    /**
+     * @var int The language ID
+     */
+    protected $langid;
+    /**
+     * @var bool Flag if init is done
+     */
+    protected $isInit = false;
+    /**
+     * @var bool Flag if in archive mode
+     */
+    protected $archive;
+    /**
+     * @var string Polls table
+     */
+    protected $tbl_poll;
+    /**
+     * @var string Choices table
+     */
+    protected $tbl_choice;
+    /**
+     * @var string IPs table
+     */
+    protected $tbl_ip;
+    /**
+     * @var string Languages table
+     */
+    protected $tbl_lang;
+    /**
+     * @var string Translations table
+     */
+    protected $tbl_trans;
+    /**
+     * @var array Templates
+     */
+    protected $templates;
 
     /**
      * Constructor
@@ -58,7 +87,6 @@ class EasyPoll
         $this->modx =& $modx;
         $this->config =& $config;
         $this->lang =& $lang;
-        $this->isInit = false;
         $this->archive = $this->config['archive'] == true;
     }
 
@@ -120,12 +148,10 @@ class EasyPoll
         }
 
         // get the poll
-        $query = '
-		SELECT
-			t.TextValue AS \'title\',
-			(SELECT SUM(c.Votes) FROM ' . $this->tbl_choice . ' c WHERE c.idPoll = p.idPoll) AS \'votes\'
-		FROM ' . $this->tbl_poll . ' p LEFT OUTER JOIN ' . $this->tbl_trans . ' t ON p.idPoll = t.idPoll
-		WHERE t.idPoll=' . $this->pollid . ' AND t.idChoice = 0 AND t.idLang=' . $this->langid;
+        $query = "SELECT t.TextValue AS 'title',
+			(SELECT SUM(c.Votes) FROM {$this->tbl_choice} c WHERE c.idPoll = p.idPoll) AS 'votes'
+		FROM {$this->tbl_poll} p LEFT OUTER JOIN {$this->tbl_trans} t ON p.idPoll = t.idPoll
+		WHERE t.idPoll = {$this->pollid} AND t.idChoice = 0 AND t.idLang = {$this->langid}";
 
         $rs = $this->modx->db->query($query);
         $row = $this->modx->db->getRow($rs);
@@ -136,12 +162,7 @@ class EasyPoll
             $this->modx->regClientCSS($this->config['css']);
         }
 
-
-        $choicequery = "
-		SELECT
-			t.TextValue AS 'title',
-			c.Votes AS 'votes',
-			c.idChoice AS 'choiceid'
+        $choicequery = "SELECT t.TextValue AS 'title', c.Votes AS 'votes', c.idChoice AS 'choiceid'
 		FROM {$this->tbl_choice} c LEFT OUTER JOIN {$this->tbl_trans} t ON c.idChoice = t.idChoice
 		WHERE c.idPoll = {$this->pollid} AND t.idLang = {$this->langid} ORDER BY c.";
 
@@ -216,8 +237,8 @@ class EasyPoll
         $buf = '';
         while ($row = $this->modx->db->getRow($rs)) {
             $values = array(
-                'answer' => htmlentities($row['title'], ENT_COMPAT, 'UTF-8'),
-                'select' => '<input type="radio" name="poll_choice" value="' . $row['choiceid'] . '"/>'
+                'answer' => $this->entity($row['title']),
+                'select' => $this->choise($row['choiceid']),
             );
 
             if ($this->templates['tplVote']['isfunction']) {
@@ -228,7 +249,7 @@ class EasyPoll
         }
 
         $values = array(
-            'question' => htmlentities($title, ENT_COMPAT, 'UTF-8'),
+            'question' => $this->entity($title),
             'submit' => '<input type="submit" name="submit" class="pollbutton" value="' . $this->lang['vote']
                 . '" id="' . $idf . 'submit"/>',
             'results' => '<input type="submit" name="result" class="pollbutton" id="' . $idf . 'result" value="' . $this->lang['results'] . '" />',
@@ -280,7 +301,7 @@ class EasyPoll
      *
      * @return string the generated HTML
      */
-    private function generateArchive()
+    protected function generateArchive()
     {
         // allow loading of css styles
         if ($this->config['css']) {
@@ -333,7 +354,7 @@ class EasyPoll
                 }
 
                 $values = array(
-                    'answer' => htmlentities($row2['title'], ENT_COMPAT, 'UTF-8'),
+                    'answer' => $this->entity($row2['title']),
                     'percent' => $perc,
                     'percent_int' => $perc_int,
                     'votes' => $row2['votes']
@@ -346,7 +367,7 @@ class EasyPoll
                 }
             }
             $values = array(
-                'question' => htmlentities($title, ENT_COMPAT, 'UTF-8'),
+                'question' => $this->entity($title),
                 'totalvotes' => $numvotes,
                 'totaltext' => $this->lang['totalvotes'],
                 'choices' => $buf
@@ -390,12 +411,8 @@ class EasyPoll
      *
      * @throws Exception
      */
-    private function init()
+    protected function init()
     {
-        if (!isset($this->modx)) {
-            throw new Exception('Must run in MODx environment', 1);
-        }
-
         if ($this->isInit) {
             return;
         }
@@ -429,7 +446,7 @@ class EasyPoll
      *
      * @throws Exception
      */
-    private function setupTemplate($key)
+    protected function setupTemplate($key)
     {
         if ($this->config[$key]) {
             $chunk = $this->config[$key];
@@ -439,7 +456,10 @@ class EasyPoll
                     throw new Exception('Template handler (' . $key . ') function does not exist. Function: ' . $match[2]);
                 }
 
-                $this->templates[$key] = array('value' => $match[2], 'isfunction' => true);
+                $this->templates[$key] = array(
+                    'value' => $match[2],
+                    'isfunction' => true
+                );
             } else if (preg_match('/^@FUNCTIONCHUNK(:|\s)\s*(\w+)/i', $chunk, $match)) {
                 $content = $this->modx->getChunk($match[2]);
                 if (!$content) {
@@ -455,13 +475,20 @@ class EasyPoll
                             throw new Exception('Errors in function definition: ' . $chunk);
                         }
                     }
-                    $this->templates[$key] = array('value' => $fmatch[1], 'isfunction' => true);
+
+                    $this->templates[$key] = array(
+                        'value' => $fmatch[1],
+                        'isfunction' => true
+                    );
                 } else {
                     throw new Exception('No function definition in: ' . $chunk);
                 }
 
             } else {
-                $this->templates[$key] = array('value' => $this->modx->getChunk($chunk), 'isfunction' => false);
+                $this->templates[$key] = array(
+                    'value' => $this->modx->getChunk($chunk),
+                    'isfunction' => false
+                );
             }
         } else {
             switch ($key) {
@@ -473,20 +500,26 @@ class EasyPoll
                     break;
                 case 'tplResultOuter':
                     $this->templates[$key] = array(
-                        'value' => '<div class="pollresults"><h3>[+question+]</h3><ul>[+choices+]</ul><p>[+totaltext+]: [+totalvotes+]</p></div>',
+                        'value' => '<div class="pollresults"><h3>[+question+]</h3><ul>[+choices+]</ul><p>[+totaltext+]: <strong>[+totalvotes+]</strong></p></div>',
                         'isfunction' => false
                     );
                     break;
                 case 'tplVote':
                     $this->templates[$key] = array(
-                        'value' => '<li>[+select+] [+answer+]</li>',
+                        'value' => '<li><label>[+select+] <span>[+answer+]<span></label></li>',
                         'isfunction' => false
                     );
                     break;
                 case 'tplResult':
                     $this->templates[$key] = array(
-                        'value' => '<li><strong>[+answer+]</strong> ([+votes+] / [+percent+]%)<div class="easypoll_bar">' .
-                            '<div class="easypoll_inner" style="width:[+percent_int+]%"></div></div></li>',
+                        'value' =>
+                            '<li>' .
+                                '<div class="answer"><strong>[+answer+]</strong> ([+percent+]%)</div>' .
+                                '<div class="easypoll_bar">' .
+                                    '<div class="easypoll_inner" style="width:[+percent_int+]%"></div>' .
+                                    '<div class="easypoll_count">[+votes+]</div>' .
+                                '</div>' .
+                            '</li>',
                         'isfunction' => false
                     );
                     break;
@@ -503,7 +536,7 @@ class EasyPoll
     /**
      * Lock the current user to prevent him from voting another time
      */
-    private function lockUser()
+    protected function lockUser()
     {
         if (!$this->config['onevote']) {
             return;
@@ -513,9 +546,10 @@ class EasyPoll
 
         if ($this->config['useip']) {
             $ip = $this->getUserIp();
-            $this->modx->db->insert(
-                array('idPoll' => $this->pollid, 'ipAddress' => $ip), $this->tbl_ip
-            );
+            $this->modx->db->insert(array(
+                'idPoll' => $this->pollid,
+                'ipAddress' => $ip
+            ), $this->tbl_ip);
         }
     }
 
@@ -526,11 +560,9 @@ class EasyPoll
      *
      * @return bool True If the vote was stored, false if not
      */
-    private function submitVote($choice)
+    protected function submitVote($choice)
     {
-        $choice = (int) $choice;
-
-        if (!$choice) {
+        if (!$choice = (int) $choice) {
             return false;
         }
 
@@ -541,19 +573,19 @@ class EasyPoll
     }
 
     /**
-     * Return the poll id.
-     * Checks if the poll exist in the database and if it's active and inside
-     * timeframe.
+     * Return the Poll ID
+     * Checks if the poll exist in the database and if it's active and inside timeframe
      *
      * @return int The poll id
      *
      * @throws Exception when poll is non-existant or the language is not ready
      */
-    private function getPollId()
+    protected function getPollId()
     {
         // we don't need to do this twice...
-        if (isset($this->pollid))
+        if (isset($this->pollid)) {
             return $this->pollid;
+        }
 
         $tmpid = 0;
 
@@ -584,7 +616,7 @@ class EasyPoll
             );
 
             if ($this->modx->db->getRecordCount($rs) == 0)
-                throw new Exception('The poll with id ' . $tmpid . ' is not available');
+                throw new Exception("The poll with id {$tmpid} is not available");
         }
 
         // if we're here, $tmpid will have a valid poll id! now we check if desired language is available
@@ -610,15 +642,15 @@ class EasyPoll
      *
      * @throws Exception
      */
-    private function getLangId()
+    protected function getLangId()
     {
         if ($this->langid) {
             return $this->langid;
         }
 
-        $rs = $this->modx->db->select('idLang', $this->tbl_lang, 'LangShort=\'' . $this->config['easylang'] . '\'');
+        $rs = $this->modx->db->select('idLang', $this->tbl_lang, "LangShort = '{$this->config['easylang']}'");
         if ($this->modx->db->getRecordCount($rs) == 0) {
-            throw new Exception('The language (' . $this->config['easylang'] . ') specified in the snippet call is not defined!', 1);
+            throw new Exception("The language ({$this->config['easylang']}) specified in the snippet call is not defined!", 1);
         }
 
         $row = $this->modx->db->getRow($rs);
@@ -631,7 +663,7 @@ class EasyPoll
      *
      * @return bool True if the user has voted already, False if not
      */
-    private function getVotedStatus()
+    protected function getVotedStatus()
     {
         // no need to invesitgate further when onevote is disabled
         if (!$this->config['onevote']) {
@@ -644,16 +676,17 @@ class EasyPoll
         }
 
         // check the cookie for status
-        if (isset($_COOKIE['EasyPoll' . $this->pollid])) {
+        if (isset($_COOKIE["EasyPoll{$this->pollid}"])) {
             return true;
         }
 
         // if ip option is set, check for user ip
         if ($this->config['useip']) {
             $userip = $this->getUserIp();
-            $rs = $this->modx->db->select('idPoll', $this->tbl_ip, 'idPoll=' . $this->pollid . ' AND ipAddress=\'' . $userip . '\'');
-            if ($this->modx->db->getRecordCount($rs) > 0)
+            $rs = $this->modx->db->select('idPoll', $this->tbl_ip, "idPoll = {$this->pollid} AND ipAddress='{$userip}'");
+            if ($this->modx->db->getRecordCount($rs) > 0) {
                 return true;
+            }
         }
 
         // done checking everything. must not have voted yet
@@ -668,7 +701,7 @@ class EasyPoll
      *
      * @return string the template with filled placeholders
      */
-    private function tplReplace(array & $fields, $tplString)
+    protected function tplReplace(array & $fields, $tplString)
     {
         $buf = $tplString;
         foreach ($fields as $k => $v) {
@@ -682,7 +715,7 @@ class EasyPoll
      *
      * @return string The user ip address
      */
-    private function getUserIp()
+    protected function getUserIp()
     {
         // This returns the True IP of the client calling the requested page
         // Checks to see if HTTP_X_FORWARDED_FOR
@@ -703,5 +736,15 @@ class EasyPoll
 
         // return the IP we've figured out:
         return $userIP;
+    }
+
+    protected function choise($id)
+    {
+        return '<input type="radio" name="poll_choice" value="' . $id . '"/>';
+    }
+
+    protected function entity($string)
+    {
+        return htmlentities($string, ENT_COMPAT, 'UTF-8');
     }
 }

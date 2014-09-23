@@ -40,7 +40,7 @@ $config['noajax'] = isset($noajax) ? $noajax == true : false;
 $config['archive'] = isset($archive) ? $archive == true : false;
 $config['votesorting'] = isset($votesorting) && preg_match('/^(Sorting|Votes)(\s(DESC|ASC))?$/i', $votesorting) ? $votesorting : 'Sorting ASC';
 $config['skipfirst'] = isset($skipfirst) ? $skipfirst == true : false;
-$config['css'] = isset($css) ? $css : false;
+$config['css'] = isset($css) && $css !== '' ? $css : '/assets/snippets/EasyPoll/poll.css';
 $config['identifier'] = isset($identifier) ? $identifier : 'easypoll';
 $config['accuracy'] = isset($accuracy) ? intval($accuracy) : 1;
 $config['tplVoteOuter'] = isset($tplVoteOuter) ? $tplVoteOuter : false;

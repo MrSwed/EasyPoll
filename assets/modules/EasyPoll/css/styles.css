@@ -2,168 +2,165 @@
 * Easy Poll Styles
 */
 .container {
-    padding:10px;
-    height:auto;
+    padding: 10px;
+    height: auto;
 }
-
-.installbox { font-size:1.3em; }
-
+.installbox {
+    font-size: 1.3em;
+}
 .installbox, .warning {
-    border:1px solid #F90;
-    background-color:#FFA;
-    padding:5px;
+    border: 1px solid #f90;
+    background-color: #ffa;
+    padding: 5px;
 }
-
-.splash h1, .splash p { margin:0.5em 0em; }
-
+.splash h1, .splash p {
+    margin: 0.5em 0;
+}
 .warning {
-    background-image:url('../../../../manager/media/style/MODx/images/icons/event2.gif');
-    background-repeat:no-repeat;
-    background-position:10px center;
-    padding-left:35px;
-    margin-bottom:1em;
+    background-image: url('../iconza/info_16x16.gif') no-repeat 10px center;
+    padding-left: 35px;
+    margin-bottom: 1em;
 }
-
+.polltable td {
+    padding: 4px 5px;
+    text-align: left;
+    vertical-align: middle;
+}
 .installbox input, .button, .button:hover, input.button {
-    padding:2px 5px 2px 24px;
-    background-image:url('../../../../manager/media/style/MODx/images/icons/b011.gif');
-    background-repeat:no-repeat !important;
-    background-position:4px center !important;
+    padding: 2px 5px 2px 24px;
+    background-image: url('../iconza/downloads_folder_16x16.gif');
+    background-repeat: no-repeat !important;
+    background-position: 4px center !important;
 }
-
 .actionButtons a {
-    float:left;
+    float: left;
 }
-
 .button, input.button {
-    padding:3px 5px 2px 24px !important;
-    border:1px solid #CCC !important;
-    background-color:#FFF;
-    cursor:pointer;
-    margin-right:5px;
-    color:#000 !important;
+    padding: 3px 5px 2px 24px !important;
+    border: 1px solid #ccc !important;
+    background-color: #fff;
+    cursor: pointer;
+    margin-right: 5px;
+    color: #000 !important;
 }
-
 .button:hover {
-    height:auto !important;
+    height: auto !important;
 }
-
 .actionButtons .edit, .actionButtons .edit:hover {
-    background-image:url('../../../../manager/media/style/MODx/images/icons/b01.gif');
+    background-image: url('../iconza/edit_16x16.gif');
 }
-
 .actionButtons .delete, .actionButtons .delete:hover {
-    background-image:url('../../../../manager/media/style/MODx/images/icons/b03.gif');
+    background-image: url('../iconza/delete_16x16.gif');
 }
-
-.actionButtons .back, .actionButtons .back:hover, .actionButtons .stop, .actionButtons .stop:hover{
-    background-image:url('../../../../manager/media/style/MODx/images/icons/prev.gif');
+.actionButtons .back, .actionButtons .back:hover, .actionButtons .stop, .actionButtons .stop:hover {
+    background-image: url('../iconza/round_left_arrow_16x16.gif');
 }
-
 .actionButtons .save, .actionButtons .save:hover {
-    background-image:url('../../../../manager/media/style/MODxLight/images/icons/ed_save.gif');
+    background-image: url('../iconza/save_16x16.gif');
 }
-
 .actionButtons .cancel, .actionButtons .cancel:hover {
-    background-image:url('../../../../manager/media/style/MODx/images/icons/close.gif');
+    background-image: url('../iconza/cancel_16x16.gif');
 }
-
 .actionButtons .confirm, .actionButtons .confirm:hover {
-    background-image:url('../../../../manager/media/style/MODx/images/icons/b011.gif');
+    background-image: url('../iconza/check_mark_16x16.gif');
 }
-
 .actionButtons .choice, .actionButtons .choice:hover {
-    background-image:url('../../../../manager/media/style/MODx/images/icons/menu_settings16.gif');
+    background-image: url('../iconza/document_16x16.gif');
 }
-
 .actionButtons .clear, .actionButtons .clear:hover {
-    background-image:url('../../../../manager/media/style/MODxLight/images/icons/trash.png');
+    background-image: url('../iconza/trash_16x16.gif');
 }
-
-
-
 input.disabled, .button.disabled {
-    background-color:#CCC !important;
-    color:#666 !important;
+    background-color: #ccc !important;
+    color: #666 !important;
 }
-
 a.translation_ok, a.translation_miss, .item_active, .editdate, .moveup, .movedown {
-    width:16px;
-    height:16px;
-    display:block;
-    background:url('../../../../manager/media/style/MODx/images/icons/event2.gif') no-repeat center center;
+    width: 16px;
+    height: 16px;
+    display: block;
+    background: url('../iconza/warning_16x16.gif') no-repeat center center;
 }
-
 a.translation_ok {
-    background-image:url('../../../../manager/media/style/MODxLight/images/icons/save.gif');
+    background-image: url('../iconza/check_mark_16x16.gif');
 }
-
 .item_active {
-    background-image:url('../../../../manager/media/style/MODxLight/images/icons/select.gif');
+    background-image: url('../iconza/check_mark_16x16.gif');
 }
-
 .editdate {
-    float:left;
-    margin-left:10px;
-    cursor:pointer;
-    background-image:url('../../../../manager/media/style/MODxLight/images/icons/cal.gif');
+    float: left;
+    margin-left: 5px;
+    margin-top: 5px;
+    cursor: pointer;
+    background-image: url('../iconza/cal_16x16.gif');
 }
-
 .moveup {
-    background-image:url('../../../../manager/media/style/MODxLight/images/icons/arrow_up.png');
+    background-image: url('../iconza/up_arrow_16x16.gif');
 }
-
 .movedown {
-    background-image:url('../../../../manager/media/style/MODxLight/images/icons/arrow_down.png');
+    background-image: url('../iconza/down_arrow_16x16.gif');
 }
-
-a.translation_ok span, a.translation_miss span, .item_active span, .editdate span, .moveup span, .movedown span { display:none; }
-
-.formtable { width:100%; }
-.formtable th { text-align:left; }
-.formtable input { float:left; }
-
-.grid .active { background-color:#dff7a8; }
-
+a.translation_ok span, a.translation_miss span, .item_active span, .editdate span, .moveup span, .movedown span {
+    display: none;
+}
+.formtable {
+     width: 100%;
+}
+.formtable th {
+    text-align: left;
+}
+.formtable input {
+    float: left;
+}
+.grid .active {
+    background-color: #dff7a8;
+}
 .error, .info {
-    padding:5px;
-    border:1px solid #600;
-    background-color:#FAA;
-    margin-bottom:1em;
+    padding: 5px;
+    border: 1px solid #600;
+    background-color: #faa;
+    margin-bottom: 1em;
 }
-
 .info {
-    border:1px solid #066;
-    background-color:#AFF;
+    border: 1px solid #066;
+    background-color: #aff;
 }
-.success p, .error p, .warning p, .info p { color:#000; font-weight:normal; width:75%; font-size:1.2em; }
-
+.success p, .error p, .warning p, .info p {
+    color: #000;
+    font-weight: normal;
+    width: 75%;
+    font-size: 1.2em;
+}
 .error .button, .warning .button, .info .button {
-    background-color:#FFF;
-    margin-right:1em;
+    background-color: #fff;
+    margin-right: 1em;
 }
-
-a.tab { text-decoration:none !important; }
-
-.message { float:left; clear:both; }
-.message .msg { float:left; width:100%; }
-a.messageclose span { display:none; }
+a.tab {
+    text-decoration: none !important;
+}
+.message {
+    float: left;
+    clear: both;
+}
+.message .msg {
+    float: left;
+    width: 100%;
+}
+a.messageclose span {
+    display: none;
+}
 a.messageclose {
-    display:block;
-    float:left;
-    width:16px;
-    height:16px;
-    background:url('../../../../manager/media/style/MODx/images/icons/close.gif') no-repeat center center;
+    display: block;
+    float: left;
+    width: 16px;
+    height: 16px;
+    background: url('../iconza/cancel_16x16.gif') no-repeat center center;
 }
-
 .tab-page .sectionBody, .tab-page .sectionHeader {
-    margin:0px;
+    margin: 0;
 }
-
 .grid th.gridHeader {
-    text-align:left !important;
-    white-space:nowrap !important;
-    padding:3px 5px 1px 5px;
-    height:auto;
+    text-align: left !important;
+    white-space: nowrap !important;
+    padding: 3px 5px 1px 5px;
+    height: auto;
 }
-

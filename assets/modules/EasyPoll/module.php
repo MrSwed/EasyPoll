@@ -33,10 +33,10 @@
  * PHP Version 5 or higher
  * MySQL Version 4.1 or higher (utf-8, InnoDB, Trasactions)
  *
- * @author banal
- * @version 0.3 <2008-02-08>
+ * @author banal, vanchelo <brezhnev.ivan@yahoo.com>
+ * @version 0.3.4 <2014-09-23>
  */
-if(!isset($modx)) die();
+if (!isset($modx)) die();
 
 $basePath = $modx->config['base_path'];
 $easyPollPath = $basePath . 'assets/modules/EasyPoll/';
@@ -45,39 +45,43 @@ $easyPollPath = $basePath . 'assets/modules/EasyPoll/';
 // get the user language settings
 // ------------------------------------------------------------------------------
 $manager_language = $modx->config['manager_language'];
-$sql =	'SELECT setting_name, setting_value FROM ' . $modx->getFullTableName('user_settings') .
-		' WHERE setting_name=\'manager_language\' AND user=' . $modx->getLoginUserID();
-$rs = $modx->db->query($sql);
 
-if ($modx->db->getRecordCount($rs) > 0) {
-    $row = $modx->db->getRow($rs);
+$rs = $modx->db->select(
+    'setting_name, setting_value',
+    $modx->getFullTableName('user_settings'),
+    "setting_name = 'manager_language' AND user = {$modx->getLoginUserID()}"
+);
+
+if ($row = $modx->db->getRow($rs)) {
     $manager_language = $row['setting_value'];
 }
 
 // load localization file.
 $_lang = array();
-include_once($easyPollPath . 'lang/english.inc.php');
 
-if($manager_language != 'english') {
-	$langfile = $easyPollPath . 'lang/' . $manager_language . '.inc.php';
-	if(file_exists($langfile)) {
-	     include_once $langfile;
-	}
+if ($manager_language != 'english') {
+    $langfile = $easyPollPath . 'lang/' . $manager_language . '.inc.php';
+    if (file_exists($langfile)) {
+        include_once $langfile;
+    }
+} else if ($manager_language === 'russian') {
+    include_once($easyPollPath . 'lang/russian-UTF8.inc.php');
 }
 
 // ------------------------------------------------------------------------------
 // Create EasyPollController
 // ------------------------------------------------------------------------------
 $classfile = $easyPollPath . 'include/EasyPollController.class.php';
-if(!file_exists($classfile))
-	$modx->messageQuit(sprintf($_lang['EP_noclassfile'], $classfile));
+if (!file_exists($classfile)) {
+    $modx->messageQuit(sprintf($_lang['EP_noclassfile'], $classfile));
+}
 
 require_once($classfile);
-$controller = new EasyPollController($_lang, $easyPollPath);
+$controller = new EasyPollController($modx, $_lang, $easyPollPath);
 try {
-	$controller->run();
-} catch (Exception $ex){
-	$modx->messageQuit($ex->getMessage());
+    $controller->run();
+} catch (Exception $e) {
+    $modx->messageQuit($e->getMessage());
 }
+
 return;
-?>

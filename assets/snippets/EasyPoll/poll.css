@@ -1,55 +1,72 @@
-/*
+@charset "UTF-8";
+/**
  * simple demo stylesheet for the EasyPoll Snippet v.0.2
+ *
+ * @author banal, vanchelo <brezhnev.ivan@yahoo.com>
+ * @version 0.3.4 <2014-09-23>
  */
-
-@CHARSET "UTF-8";
-
+.easypoll {
+    margin: 40px 0;
+}
 .pollvotes, .pollresults {
-    max-width:200px;
-    background-color:#cfe295;
-    border:1px solid #79a100;
-    padding:10px;
+    max-width: 185px;
+    margin-left: 12px;
+    background-color: #ccc;
+    padding: 10px;
 }
-
 .pollvotes h3, .pollresults h3 {
-    margin-top:0px;
-    font-size:1.4em;
-    color:#618200;
+    margin-top: 0;
+    margin-bottom: 10px;
+    font-size: 1em;
+    font-weight: normal;
+    color: #000;
 }
-
 .pollvotes ul, .pollresults ul {
-    padding:0px 4px 0px 16px;
+    list-style: none;
+    padding: 0;
+    margin-bottom: 15px;
+    font-size: 0.9em;
 }
-
+.pollresults ul {
+    font-size: 0.8em;
+}
+.pollvotes ul li {
+    margin-bottom: 5px;
+}
+.pollvotes ul li input {
+    margin: 0;
+}
 .easypoll fieldset {
-    border:0px;
-    margin:0px;
-    padding:0px;
+    border: none;
+    margin: 0;
+    padding: 0;
 }
-
 .easypoll input.pollbutton {
-    border:1px solid #79a100;
-    color:#618200;
-    background-color:#d8e6af;
+    border: 1px solid #000;
+    color: #fff;
+    background-color: #555;
 }
-
 .easypoll input:hover {
-    background-color:#FFF;
+    background-color: #777;
 }
-
 .easypoll_bar {
-    height:8px;
-    background-color:#FFF;
+    height: 8px;
+    background-color: #fff;
+    margin-top: 0;
+    margin-bottom: 10px;
 }
-
 .easypoll_inner {
-    height:100%;
-    background:url('../../templates/modxhost/images/foot_4x82.jpg') repeat-x top left;
-    background-color:#618200;
+    height: 100%;
+    background: url('pollbar.png') repeat-x top left #f00;
 }
-
+.pollresults p {
+    font-size: 10pt;
+}
 .easypoll_error {
-    border:1px solid #600;
-    background-color:#FAA;
-    padding:8px;
+    max-width: 185px;
+    margin-left: 12px;
+    font-size: 0.9em;
+    border: 1px solid #000;
+    background-color: #faa;
+    padding: 10px;
 }

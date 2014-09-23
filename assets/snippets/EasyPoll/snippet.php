@@ -77,14 +77,14 @@ require_once($classfile);
 try {
     $handler = new EasyPoll($modx, $config, $_lang);
     return $handler->generateOutput();
-} catch (Exception $ex) {
+} catch (Exception $e) {
     // only display the exception if we have a error code above 0. otherwise remain silent
-    if ($ex->getCode() > 0 || $config['showexception']) {
+    if ($e->getCode() > 0 || $config['showexception']) {
         // if we get a code above or equal to 128, we just exit
-        if ($ex->getCode() >= 128) {
-            return $ex->getMessage();
+        if ($e->getCode() >= 128) {
+            return $e->getMessage();
         } else {
-            $modx->messageQuit('EasyPoll Snippet Error: ' . $ex->getMessage());
+            $modx->messageQuit('EasyPoll Snippet Error: ' . $e->getMessage());
         }
     }
 }

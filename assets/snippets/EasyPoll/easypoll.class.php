@@ -211,7 +211,7 @@ class EasyPoll
             return $buffer;
         }
 
-        // request mootools unless specified otherwise
+        // request jQuery unless specified otherwise
         if (!$this->config['nojs']) {
             $this->modx->regClientStartupScript('http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js');
         }

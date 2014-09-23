@@ -14,7 +14,7 @@
 # by banal
 ###################################################################################
 
-CREATE TABLE IF NOT EXISTS `ep_poll` (
+CREATE TABLE IF NOT EXISTS {ep_poll} (
   `idPoll` int(10) unsigned NOT NULL auto_increment,
   `Title` varchar(128) NOT NULL,
   `isActive` tinyint(1) unsigned NOT NULL default '0',
@@ -23,7 +23,7 @@ CREATE TABLE IF NOT EXISTS `ep_poll` (
   PRIMARY KEY  (`idPoll`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE IF NOT EXISTS `ep_choice` (
+CREATE TABLE IF NOT EXISTS {ep_choice} (
   `idChoice` int(10) unsigned NOT NULL auto_increment,
   `idPoll` int(10) unsigned NOT NULL,
   `Title` varchar(128) NOT NULL,
@@ -32,7 +32,7 @@ CREATE TABLE IF NOT EXISTS `ep_choice` (
   PRIMARY KEY  (`idChoice`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE IF NOT EXISTS `ep_language` (
+CREATE TABLE IF NOT EXISTS {ep_language} (
   `idLang` int(10) unsigned NOT NULL auto_increment,
   `LangShort` char(3) NOT NULL,
   `LangName` varchar(256) NOT NULL,
@@ -40,7 +40,7 @@ CREATE TABLE IF NOT EXISTS `ep_language` (
   UNIQUE KEY `uniqLang` (`LangShort`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE IF NOT EXISTS `ep_translation` (
+CREATE TABLE IF NOT EXISTS {ep_translation} (
   `idPoll` int(10) unsigned NOT NULL,
   `idChoice` int(10) unsigned NOT NULL default '0',
   `idLang` int(10) unsigned NOT NULL,
@@ -48,7 +48,7 @@ CREATE TABLE IF NOT EXISTS `ep_translation` (
   PRIMARY KEY  USING BTREE (`idChoice`,`idLang`,`idPoll`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE IF NOT EXISTS `ep_userip` (
+CREATE TABLE IF NOT EXISTS {ep_userip} (
   `id` int(10) unsigned NOT NULL auto_increment,
   `idPoll` int(10) unsigned NOT NULL,
   `ipAddress` varchar(128) NOT NULL,

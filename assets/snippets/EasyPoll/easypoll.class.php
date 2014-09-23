@@ -11,7 +11,7 @@
  *        these are the versions this snippet was developped for.
  *        might work with other versions as well. not tested
  *
- * jQuery <http://jquery.com/>
+ * jQuery with XHR/Ajax module <http://jquery.com/>
  *
  * @author banal, vanchelo <brezhnev.ivan@yahoo.com>
  * @version 0.3.4 <2014-09-23>

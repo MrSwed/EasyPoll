@@ -137,7 +137,9 @@ class EasyPollController
         if ($this->isInstalled) {
             // seems like we have all tables we need at this point
             if (file_exists($sqlfile)) // show a warning if sql file is still there
+            {
                 $buffer .= '<div class="warning">' . sprintf($this->lang['EP_sqlfile_warn'], $sqlfile) . '</div>';
+            }
         } else {
             // not installed yet
             $buffer .= '<div class="installbox">' . $this->lang['EP_not_installed'] .
@@ -194,6 +196,7 @@ class EasyPollController
         }
 
         $buffer .= '</div>';
+
         return $buffer;
     }
 
@@ -204,9 +207,6 @@ class EasyPollController
      */
     private function setup()
     {
-        $basePath = $this->modx->config['base_path'];
-        $tbl_prefix = $this->modx->db->config['table_prefix'];
-
         $sqlfile = $this->path . 'setup.sql';
 
         // show error message if .sql file is not readable
@@ -221,7 +221,7 @@ class EasyPollController
 
         // replace table names with the modx prefix + table name
         foreach ($this->tables as $name) {
-            $sql = str_replace($name, $tbl_prefix . $name, $sql);
+            $sql = str_replace('{' . $name . '}', $this->modx->getFullTableName($name), $sql);
         }
 
         // get the create table commands and run them
@@ -252,6 +252,8 @@ class EasyPollController
         // if we encountered errors we must stop here...
         if ($errors) {
             return '<div class="error">' . $this->lang['EP_sqlcreate_error'] . '</div>';
+        } else {
+            @unlink($sqlfile);
         }
 
         return '<div class="success">' . sprintf($this->lang['EP_installsuccess'], $sqlfile) . '</div>';

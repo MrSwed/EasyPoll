@@ -1,4 +1,5 @@
 <?php
+
 /**
  * ------------------------------------------------------------------------------
  * EasyPoll Vote Class
@@ -6,667 +7,744 @@
  * EasyPoll Voting, loosely based on the poll manager by garryn
  *
  * Dependencies:
- * MODx 0.9.5, 0.9.6
- * 		these are the versions this snippet was developped for.
- * 		might work with other versions as well. not tested
+ * MODx >=1.0.10
+ *        these are the versions this snippet was developped for.
+ *        might work with other versions as well. not tested
  *
- * MooTools with XHR/Ajax module <http://mootools.net/>
+ * jQuery with XHR/Ajax module <http://jquery.com/>
  *
- * @author banal
- * @version 0.3.3 <2008-10-21>
+ * @author banal, vanchelo <brezhnev.ivan@yahoo.com>
+ * @version 0.3.4 <2014-09-23>
  */
+class EasyPoll
+{
+    /**
+     * @var DocumentParser
+     */
+    protected $modx;
+    /**
+     * @var array Configuration array
+     */
+    protected $config;
+    /**
+     * @var array Language specific strings array
+     */
+    protected $lang;
+    /**
+     * @var bool Flag indicating if the user voted already
+     */
+    protected $voted;
+    /**
+     * @var int The poll DB ID
+     */
+    protected $pollid;
+    /**
+     * @var int The language ID
+     */
+    protected $langid;
+    /**
+     * @var bool Flag if init is done
+     */
+    protected $isInit = false;
+    /**
+     * @var bool Flag if in archive mode
+     */
+    protected $archive;
+    /**
+     * @var string Polls table
+     */
+    protected $tbl_poll;
+    /**
+     * @var string Choices table
+     */
+    protected $tbl_choice;
+    /**
+     * @var string IPs table
+     */
+    protected $tbl_ip;
+    /**
+     * @var string Languages table
+     */
+    protected $tbl_lang;
+    /**
+     * @var string Translations table
+     */
+    protected $tbl_trans;
+    /**
+     * @var array Templates
+     */
+    protected $templates;
 
-class EasyPoll {
-	// configuration array
-	private $config;
-	// language specific strings array
-	private $lang;
-	// flag indicating if the user voted already
-	private $voted;
-	// the poll DB id
-	private $pollid;
-	// the language id
-	private $langid;
-	// flag if init is done
-	private $isinit;
-	// flag if in archive mode
-	private $archive;
+    /**
+     * Constructor
+     *
+     * @param DocumentParser $modx
+     * @param array $config configuration parameters, coming from the snippet
+     * @param array $lang array containing language specific strings
+     */
+    public function __construct(DocumentParser & $modx, array &$config, array &$lang)
+    {
+        $this->modx =& $modx;
+        $this->config =& $config;
+        $this->lang =& $lang;
+        $this->archive = $this->config['archive'] == true;
+    }
 
-	// database tables
-	private $tbl_poll;
-	private $tbl_choice;
-	private $tbl_ip;
-	private $tbl_lang;
-	private $tbl_trans;
+    /**
+     * Generate the output.
+     * @return string the generated HTML Output.
+     */
+    public function generateOutput()
+    {
+        $this->init();
 
-	// templates
-	private $templates;
+        // if in archive mode, return the archive..
+        if ($this->archive) {
+            return $this->generateArchive();
+        }
 
-	/**
-	 * Constructor.
-	 * Expects two arrays as parameters.
-	 *
-	 * @param $config configuration parameters, coming from the snippet
-	 * @param $lang array containing language specific strings
-	 */
-	public function __construct(array &$config, array &$lang) {
-		$this->config =& $config;
-		$this->lang =& $lang;
-		$this->isinit = false;
-		$this->archive = $this->config['archive'] == true;
-	}
+        // store a flag if this is the right poll... necessary for multiple poll handling
+        $isThisPoll = (isset($_POST['idf']) && $_POST['idf'] == $this->config['identifier']);
 
-	/**
-	 * Generate the output.
-	 * @return string the generated HTML Output.
-	 */
-	public function generateOutput(){
-		global $modx;
+        // check if we're dealing with a ajaxrequest here
+        if (!$this->config['noajax'] && !empty($_POST['ajxrequest']) && $_POST['ajxrequest'] == 1) {
+            // we check if this really concerns us
+            if (!$isThisPoll) {
+                return;
+            }
 
-		$this->init();
+            // remove the parameter to not trigger an infinite loop
+            unset($_POST['ajxrequest']);
+            // return the generated output
+            echo $this->generateOutput();
+            exit();
+        }
 
-		// if in archive mode, return the archive..
-		if($this->archive)
-			return $this->generateArchive();
+        // catch a vote
+        if (isset($_POST['submit']) && $isThisPoll) {
+            // if this user has voted already, return message
+            if ($this->voted) {
+                $values = array('message' => $this->lang['alreadyvoted']);
+                if ($this->templates['tplError']['isfunction']) {
+                    return call_user_func($this->templates['tplError']['value'], $values, 'tplError');
+                } else {
+                    return $this->tplReplace($values, $this->templates['tplError']['value']);
+                }
+            }
 
-		// store a flag if this is the right poll... necessary for multiple poll handling
-		$isThisPoll = (isset($_POST['idf']) && $_POST['idf'] == $this->config['identifier']);
+            $success = $this->submitVote(intval($_POST['poll_choice']));
+            if ($success) {
+                // successfully voted. lock the user if necessary
+                $this->lockUser();
+                $this->voted = true;
+            } else {
+                $values = array('message' => $this->lang['error']);
+                if ($this->templates['tplError']['isfunction']) {
+                    return call_user_func($this->templates['tplError']['value'], $values, 'tplError');
+                } else {
+                    return $this->tplReplace($values, $this->templates['tplError']['value']);
+                }
+            }
+        }
 
-		// check if we're dealing with a ajaxrequest here
-		if(!$this->config['noajax'] && !empty($_POST['ajxrequest']) && $_POST['ajxrequest'] == 1){
-			// we check if this really concerns us
-			if(!$isThisPoll)
-				return;
+        // get the poll
+        $query = "SELECT t.TextValue AS 'title',
+			(SELECT SUM(c.Votes) FROM {$this->tbl_choice} c WHERE c.idPoll = p.idPoll) AS 'votes'
+		FROM {$this->tbl_poll} p LEFT OUTER JOIN {$this->tbl_trans} t ON p.idPoll = t.idPoll
+		WHERE t.idPoll = {$this->pollid} AND t.idChoice = 0 AND t.idLang = {$this->langid}";
 
-			// remove the parameter to not trigger an infinite loop
-			unset($_POST['ajxrequest']);
-			// return the generated output
-			echo $this->generateOutput();
-			exit();
-		}
+        $rs = $this->modx->db->query($query);
+        $row = $this->modx->db->getRow($rs);
+        $title = $row['title'];
+        $numvotes = $row['votes'];
 
-		// catch a vote
-		if(isset($_POST['submit']) && $isThisPoll){
-			// if this user has voted already, return message
-			if($this->voted){
-				$values = array('message' => $this->lang['alreadyvoted']);
-				if($this->templates['tplError']['isfunction']){
-					return call_user_func($this->templates['tplError']['value'], $values, 'tplError');
-				} else {
-					return $this->tplReplace($values, $this->templates['tplError']['value']);
-				}
-			}
+        if ($this->config['css']) {
+            $this->modx->regClientCSS($this->config['css']);
+        }
 
-			$success = $this->submitVote(intval($_POST['poll_choice']));
-			if($success){
-				// successfully voted. lock the user if necessary
-				$this->lockUser();
-				$this->voted = true;
-			} else {
-				$values = array('message' => $this->lang['error']);
-				if($this->templates['tplError']['isfunction']){
-					return call_user_func($this->templates['tplError']['value'], $values, 'tplError');
-				} else {
-					return $this->tplReplace($values, $this->templates['tplError']['value']);
-				}
-			}
-		}
+        $choicequery = "SELECT t.TextValue AS 'title', c.Votes AS 'votes', c.idChoice AS 'choiceid'
+		FROM {$this->tbl_choice} c LEFT OUTER JOIN {$this->tbl_trans} t ON c.idChoice = t.idChoice
+		WHERE c.idPoll = {$this->pollid} AND t.idLang = {$this->langid} ORDER BY c.";
 
-		// get the poll
-		$query = '
-		SELECT
-			t.TextValue AS \'title\',
-			(SELECT SUM(c.Votes) FROM '. $this->tbl_choice .' c WHERE c.idPoll = p.idPoll) AS \'votes\'
-		FROM '. $this->tbl_poll .' p LEFT OUTER JOIN '. $this->tbl_trans .' t ON p.idPoll = t.idPoll
-		WHERE t.idPoll='. $this->pollid .' AND t.idChoice = 0 AND t.idLang='. $this->langid;
+        // user has voted already or explicitly wants to see the results
+        if ($this->voted || ($isThisPoll && isset($_GET['showresults'])) || isset($_POST['result'])) {
+            $choicequery .= $this->config['votesorting'];
 
-		$rs = $modx->db->query($query);
-		$row = $modx->db->getRow($rs);
-		$title = $row['title'];
-		$numvotes = $row['votes'];
+            $buf = '';
+            $rs = $this->modx->db->query($choicequery);
+            while ($row = $this->modx->db->getRow($rs)) {
+                if ($numvotes > 0) {
+                    $perc = round(100 / $numvotes * $row['votes'], $this->config['accuracy']);
+                    $perc_int = (int) $perc;
+                } else {
+                    $perc = $perc_int = 0;
+                }
 
-		if($this->config['css'])
-			$modx->regClientCSS($this->config['css']);
+                $values = array(
+                    'answer' => $row['title'],
+                    'percent' => $perc,
+                    'percent_int' => $perc_int,
+                    'votes' => $row['votes']
+                );
 
+                if ($this->templates['tplResult']['isfunction']) {
+                    $buf .= call_user_func($this->templates['tplResult']['value'], $values, 'tplResult');
+                } else {
+                    $buf .= $this->tplReplace($values, $this->templates['tplResult']['value']);
+                }
+            }
 
-		$choicequery = '
-		SELECT
-			t.TextValue AS \'title\',
-			c.Votes AS \'votes\',
-			c.idChoice AS \'choiceid\'
-		FROM '. $this->tbl_choice .' c LEFT OUTER JOIN '. $this->tbl_trans .' t ON c.idChoice = t.idChoice
-		WHERE c.idPoll='. $this->pollid .' AND t.idLang='. $this->langid .' ORDER BY c.';
-		
-		// user has voted already or explicitly wants to see the results
-		if( $this->voted || ($isThisPoll && isset($_GET['showresults'])) || isset($_POST['result']) ){
-			$choicequery .= $this->config['votesorting'];
-			
-			$buf = '';
-			$rs = $modx->db->query($choicequery);
-			while($row = $modx->db->getRow($rs)){
-				if($numvotes > 0){
-					$perc = round(100 / $numvotes * $row['votes'], $this->config['accuracy']);
-					$perc_int = (int)$perc;
-				} else {
-					$perc = $perc_int = 0;
-				}
+            //TODO: if user has not voted, display button to take him back to voting screen?
+            $values = array(
+                'question' => $title,
+                'totalvotes' => $numvotes,
+                'totaltext' => $this->lang['totalvotes'],
+                'choices' => $buf
+            );
 
-				$values = array(
-					'answer' => $row['title'],
-					'percent' => $perc,
-					'percent_int' => $perc_int,
-					'votes' => $row['votes']
-				);
+            if ($this->templates['tplResultOuter']['isfunction']) {
+                $buffer = call_user_func($this->templates['tplResultOuter']['value'], $values, 'tplResultOuter');
+            } else {
+                $buffer = $this->tplReplace($values, $this->templates['tplResultOuter']['value']);
+            }
 
-				if($this->templates['tplResult']['isfunction']){
-					$buf .= call_user_func($this->templates['tplResult']['value'], $values, 'tplResult');
-				} else {
-					$buf .= $this->tplReplace($values, $this->templates['tplResult']['value']);
-				}
-			}
+            return $buffer;
+        }
 
-			//TODO: if user has not voted, display button to take him back to voting screen?
-			$values = array(
-				'question' => $title,
-				'totalvotes' => $numvotes,
-				'totaltext' => $this->lang['totalvotes'],
-				'choices' => $buf
-			);
+        // request jQuery unless specified otherwise
+        if (!$this->config['nojs']) {
+            $this->modx->regClientStartupScript('http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js');
+        }
 
-			if($this->templates['tplResultOuter']['isfunction']){
-				$buffer = call_user_func($this->templates['tplResultOuter']['value'], $values, 'tplResultOuter');
-			} else {
-				$buffer = $this->tplReplace($values, $this->templates['tplResultOuter']['value']);
-			}
+        // request our helper class, only if ajax enabled
+        if (!$this->config['noajax']) {
+            $this->modx->regClientStartupScript('assets/snippets/EasyPoll/script/EasyPollAjax.js');
+        }
 
-			return $buffer;
-		}
+        $url = $this->modx->makeUrl($this->modx->documentObject['id'], '', '&showresults=1');
+        $urlajax = $this->modx->makeUrl($this->modx->documentObject['id'], '', '');
 
-		// request mootools unless specified otherwise
-		if(!$this->config['nojs'])
-			$modx->regClientStartupScript('manager/media/script/mootools/mootools.js');
+        $callback = $this->config['jscallback'] ? $this->config['jscallback'] : 'EasyPoll_DefaultCallback';
 
-		// request our helper class, only if ajax enabled
-		if(!$this->config['noajax'])
-			$modx->regClientStartupScript('assets/snippets/EasyPoll/script/EasyPollAjax.js');
+        $idf = $this->config['identifier'];
+        $header = '
+		<div id="' . $idf . '" class="easypoll"><form name="' . $idf . 'form" id="' . $idf . 'form" method="POST" action="' . $url . '">
+		<fieldset><input type="hidden" id="' . $idf . 'ajx" name="ajxrequest" value="0"/>
+		<input type="hidden" name="pollid" value="' . $this->pollid . '"/><input type="hidden" name="idf" value="' . $idf . '"/>';
 
-		$url = $modx->makeUrl($modx->documentObject['id'],'','&showresults=1');
-		$urlajax = $modx->makeUrl($modx->documentObject['id'],'','');
+        $choicequery .= 'Sorting ASC';
+        $rs = $this->modx->db->query($choicequery);
+        $buf = '';
+        while ($row = $this->modx->db->getRow($rs)) {
+            $values = array(
+                'answer' => $this->entity($row['title']),
+                'select' => $this->choise($row['choiceid']),
+            );
 
-		$callback = $this->config['jscallback'] ? $this->config['jscallback'] : 'EasyPoll_DefaultCallback';
+            if ($this->templates['tplVote']['isfunction']) {
+                $buf .= call_user_func($this->templates['tplVote']['value'], $values, 'tplVote');
+            } else {
+                $buf .= $this->tplReplace($values, $this->templates['tplVote']['value']);
+            }
+        }
 
-		$idf = $this->config['identifier'];
-		$header = '
-		<div id="'. $idf .'" class="easypoll"><form name="'. $idf .'form" id="'. $idf .'form" method="POST" action="' . $url . '">
-		<fieldset><input type="hidden" id="'. $idf .'ajx" name="ajxrequest" value="0"/>
-		<input type="hidden" name="pollid" value="'. $this->pollid .'"/><input type="hidden" name="idf" value="' . $idf .'"/>';
-		
-		$choicequery .= 'Sorting ASC';
-		$rs = $modx->db->query($choicequery);
-		$buf = '';
-		while($row = $modx->db->getRow($rs)){
-			$values = array(
-				'answer' => htmlentities($row['title'], ENT_COMPAT, 'UTF-8'),
-				'select' => '<input type="radio" name="poll_choice" value="' . $row['choiceid'] . '"/>'
-			);
+        $values = array(
+            'question' => $this->entity($title),
+            'submit' => '<input type="submit" name="submit" class="pollbutton" value="' . $this->lang['vote']
+                . '" id="' . $idf . 'submit"/>',
+            'results' => '<input type="submit" name="result" class="pollbutton" id="' . $idf . 'result" value="' . $this->lang['results'] . '" />',
+            'choices' => $buf
+        );
 
-			if($this->templates['tplVote']['isfunction']){
-				$buf .= call_user_func($this->templates['tplVote']['value'], $values, 'tplVote');
-			} else {
-				$buf .= $this->tplReplace($values, $this->templates['tplVote']['value']);
-			}
-		}
+        if ($this->templates['tplVoteOuter']['isfunction']) {
+            $buffer = call_user_func($this->templates['tplVoteOuter']['value'], $values, 'tplVoteOuter');
+        } else {
+            $buffer = $this->tplReplace($values, $this->templates['tplVoteOuter']['value']);
+        }
+        $buffer = $header . $buffer . '</fieldset></form></div>';
 
-		$values = array(
-			'question' => htmlentities($title, ENT_COMPAT, 'UTF-8'),
-			'submit' => '<input type="submit" name="submit" class="pollbutton" value="'. $this->lang['vote']
-						.'" id="'. $idf .'submit"/>',
-			'results' => '<input type="submit" name="result" class="pollbutton" id="'. $idf .'result" value="'. $this->lang['results'] .'" />',
-			'choices' => $buf
-		);
+        // request any external js file if needed
+        if ($this->config['customjs']) {
+            $match = array();
+            if (preg_match('/^@CHUNK(:|\s)\s*(\w+)$/i', $this->config['customjs'], $match)) {
+                $js = $this->modx->getChunk($match[2]);
+            } else {
+                $js = $this->config['customjs'];
+            }
 
-		if($this->templates['tplVoteOuter']['isfunction']){
-			$buffer = call_user_func($this->templates['tplVoteOuter']['value'], $values, 'tplVoteOuter');
-		} else {
-			$buffer = $this->tplReplace($values, $this->templates['tplVoteOuter']['value']);
-		}
-		$buffer = $header . $buffer . '</fieldset></form></div>';
+            if (preg_match('/^<script/i', $js)) {
+                $buffer .= $js;
+            } else {
+                $this->modx->regClientStartupScript($js);
+            }
+        }
 
-		// request any external js file if needed
-		if($this->config['customjs']){
-			$match = array();
-			if(preg_match('/^@CHUNK(:|\s)\s*(\w+)$/i', $this->config['customjs'], $match)){
-				$js = $modx->getChunk($match[2]);
-			} else {
-				$js = $this->config['customjs'];
-			}
-
-			if(preg_match('/^<script/i', $js)){
-				$buffer .= $js;
-			} else {
-				$modx->regClientStartupScript($js);
-			}
-		}
-
-		if(!$this->config['noajax']){
-			$buffer .= '
+        if (!$this->config['noajax']) {
+            $buffer .= '
 			<script type="text/javascript">
 			// <!--
-			var js' . $idf . ' = new EasyPollAjax("'. $idf .'", "'. $urlajax .'");
+			var js' . $idf . ' = new EasyPollAjax("' . $idf . '", "' . $urlajax . '");
 			js' . $idf . '.registerCallback(' . $callback . ');
 			js' . $idf . '.registerButton("submit");
 			js' . $idf . '.registerButton("result");
 			// -->
 			</script>
 			';
-		}
-		return $buffer;
-	}
+        }
 
-	/**
-	 * Generate a poll archive.
-	 * This will simply output all past polls
-	 * @return string the generated HTML
-	 */
-	private function generateArchive(){
-		global $modx;
+        return $buffer;
+    }
 
-		// allow loading of css styles
-		if($this->config['css'])
-			$modx->regClientCSS($this->config['css']);
+    /**
+     * Generate a poll archive.
+     * This will simply output all past polls
+     *
+     * @return string the generated HTML
+     */
+    protected function generateArchive()
+    {
+        // allow loading of css styles
+        if ($this->config['css']) {
+            $this->modx->regClientCSS($this->config['css']);
+        }
 
+        $output = '';
 
-		$output = '';
-
-		// get the polls. make sure we don't get any inactive, non-translated or polls without choices
-		$query = '
+        // get the polls. make sure we don't get any inactive, non-translated or polls without choices
+        $query = '
 		SELECT
 			p.idPoll AS \'pollid\',
 			t.TextValue AS \'title\',
-			(SELECT SUM(c.Votes) FROM '. $this->tbl_choice .' c WHERE c.idPoll = p.idPoll) AS \'votes\'
-			FROM '. $this->tbl_poll .' p LEFT OUTER JOIN '. $this->tbl_trans .' t ON p.idPoll = t.idPoll
+			(SELECT SUM(c.Votes) FROM ' . $this->tbl_choice . ' c WHERE c.idPoll = p.idPoll) AS \'votes\'
+			FROM ' . $this->tbl_poll . ' p LEFT OUTER JOIN ' . $this->tbl_trans . ' t ON p.idPoll = t.idPoll
 		WHERE
-			(SELECT COUNT(c.idPoll) FROM '. $this->tbl_choice .' c WHERE c.idPoll=p.idPoll) > 0 AND
-			(SELECT COUNT(t.idPoll) FROM '. $this->tbl_trans .' t WHERE t.idPoll=p.idPoll AND t.idLang='. $this->langid .')
-		    - (SELECT COUNT(c.idPoll)+1 FROM '. $this->tbl_choice .' c WHERE c.idPoll=p.idPoll) = 0
-			AND p.isActive=1 AND t.idChoice = 0 AND p.StartDate <= NOW() AND t.idLang='. $this->langid .'
+			(SELECT COUNT(c.idPoll) FROM ' . $this->tbl_choice . ' c WHERE c.idPoll=p.idPoll) > 0 AND
+			(SELECT COUNT(t.idPoll) FROM ' . $this->tbl_trans . ' t WHERE t.idPoll=p.idPoll AND t.idLang=' . $this->langid . ')
+		    - (SELECT COUNT(c.idPoll)+1 FROM ' . $this->tbl_choice . ' c WHERE c.idPoll=p.idPoll) = 0
+			AND p.isActive=1 AND t.idChoice = 0 AND p.StartDate <= NOW() AND t.idLang=' . $this->langid . '
 		ORDER BY p.StartDate DESC';
 
-		$rs = $modx->db->query($query);
-		$count = 0;
-		while($row = $modx->db->getRow($rs)){
-			$count++;
-			if($count == 1 && $this->config['skipfirst'])
-				continue;
+        $rs = $this->modx->db->query($query);
+        $count = 0;
+        while ($row = $this->modx->db->getRow($rs)) {
+            $count++;
+            if ($count == 1 && $this->config['skipfirst']) {
+                continue;
+            }
 
-			$title = $row['title'];
-			$numvotes = $row['votes'];
+            $title = $row['title'];
+            $numvotes = $row['votes'];
 
-			$choicequery = '
+            $choicequery = '
 			SELECT
 				t.TextValue AS \'title\',
 				c.Votes AS \'votes\',
 				c.idChoice AS \'choiceid\'
-			FROM '. $this->tbl_choice .' c LEFT OUTER JOIN '. $this->tbl_trans .' t ON c.idChoice = t.idChoice
-			WHERE c.idPoll='. $row['pollid'] .' AND t.idLang='. $this->langid .' ORDER BY c.' . $this->config['votesorting'];
+			FROM ' . $this->tbl_choice . ' c LEFT OUTER JOIN ' . $this->tbl_trans . ' t ON c.idChoice = t.idChoice
+			WHERE c.idPoll=' . $row['pollid'] . ' AND t.idLang=' . $this->langid . ' ORDER BY c.' . $this->config['votesorting'];
 
-			$buf = '';
-			$rs2 = $modx->db->query($choicequery);
-			while($row2 = $modx->db->getRow($rs2)){
-				if($numvotes > 0){
-					$perc = round(100 / $numvotes * $row2['votes'], $this->config['accuracy']);
-					$perc_int = (int)$perc;
-				} else {
-					$perc = $perc_int = 0;
-				}
+            $buf = '';
+            $rs2 = $this->modx->db->query($choicequery);
+            while ($row2 = $this->modx->db->getRow($rs2)) {
+                if ($numvotes > 0) {
+                    $perc = round(100 / $numvotes * $row2['votes'], $this->config['accuracy']);
+                    $perc_int = (int) $perc;
+                } else {
+                    $perc = $perc_int = 0;
+                }
 
-				$values = array(
-					'answer' => htmlentities($row2['title'], ENT_COMPAT, 'UTF-8'),
-					'percent' => $perc,
-					'percent_int' => $perc_int,
-					'votes' => $row2['votes']
-				);
+                $values = array(
+                    'answer' => $this->entity($row2['title']),
+                    'percent' => $perc,
+                    'percent_int' => $perc_int,
+                    'votes' => $row2['votes']
+                );
 
-				if($this->templates['tplResult']['isfunction']){
-					$buf .= call_user_func($this->templates['tplResult']['value'], $values, 'tplResult');
-				} else {
-					$buf .= $this->tplReplace($values, $this->templates['tplResult']['value']);
-				}
-			}
-			$values = array(
-				'question' => htmlentities($title, ENT_COMPAT, 'UTF-8'),
-				'totalvotes' => $numvotes,
-				'totaltext' => $this->lang['totalvotes'],
-				'choices' => $buf
-			);
+                if ($this->templates['tplResult']['isfunction']) {
+                    $buf .= call_user_func($this->templates['tplResult']['value'], $values, 'tplResult');
+                } else {
+                    $buf .= $this->tplReplace($values, $this->templates['tplResult']['value']);
+                }
+            }
+            $values = array(
+                'question' => $this->entity($title),
+                'totalvotes' => $numvotes,
+                'totaltext' => $this->lang['totalvotes'],
+                'choices' => $buf
+            );
 
-			if($this->templates['tplResultOuter']['isfunction']){
-				$buffer = call_user_func($this->templates['tplResultOuter']['value'], $values, 'tplResultOuter');
-			} else {
-				$buffer = $this->tplReplace($values, $this->templates['tplResultOuter']['value']);
-			}
+            if ($this->templates['tplResultOuter']['isfunction']) {
+                $buffer = call_user_func($this->templates['tplResultOuter']['value'], $values, 'tplResultOuter');
+            } else {
+                $buffer = $this->tplReplace($values, $this->templates['tplResultOuter']['value']);
+            }
 
-			$output .= $buffer;
-		}
+            $output .= $buffer;
+        }
 
-		// only include js when there is any output
-		if($count > 0 || ($this->config['skipfirst'] && $count > 1)){
-			// request any external js file if needed
-			if($this->config['customjs']){
-				$match = array();
-				if(preg_match('/^@CHUNK(:|\s)\s*(\w+)/i', $this->config['customjs'], $match)){
-					$js = $modx->getChunk($match[2]);
-				} else {
-					$js = $this->config['customjs'];
-				}
+        // only include js when there is any output
+        if ($count > 0 || ($this->config['skipfirst'] && $count > 1)) {
+            // request any external js file if needed
+            if ($this->config['customjs']) {
+                $match = array();
+                if (preg_match('/^@CHUNK(:|\s)\s*(\w+)/i', $this->config['customjs'], $match)) {
+                    $js = $this->modx->getChunk($match[2]);
+                } else {
+                    $js = $this->config['customjs'];
+                }
 
-				if(preg_match('/^<script/i', $js)){
-					$output .= $js;
-				} else {
-					$modx->regClientStartupScript($js);
-				}
-			}
-		}
+                if (preg_match('/^<script/i', $js)) {
+                    $output .= $js;
+                } else {
+                    $this->modx->regClientStartupScript($js);
+                }
+            }
+        }
 
-		return $output;
-	}
+        return $output;
+    }
 
-	/*
-	 * Initialize items
-	 */
-	private function init(){
-		global $modx;
+    /**
+     * Initialize items
+     *
+     * @return null
+     *
+     * @throws Exception
+     */
+    protected function init()
+    {
+        if ($this->isInit) {
+            return;
+        }
 
-		if(!isset($modx))
-			throw new Exception('Must run in MODx environment',1);
+        $this->tbl_poll = $this->modx->getFullTableName('ep_poll');
+        $this->tbl_choice = $this->modx->getFullTableName('ep_choice');
+        $this->tbl_ip = $this->modx->getFullTableName('ep_userip');
+        $this->tbl_lang = $this->modx->getFullTableName('ep_language');
+        $this->tbl_trans = $this->modx->getFullTableName('ep_translation');
 
-		if($this->isinit)
-			return;
+        $this->templates = array();
+        $this->setupTemplate('tplVoteOuter');
+        $this->setupTemplate('tplVote');
+        $this->setupTemplate('tplResultOuter');
+        $this->setupTemplate('tplResult');
+        $this->setupTemplate('tplError');
 
-		$this->tbl_poll		= $modx->getFullTableName('ep_poll');
-		$this->tbl_choice	= $modx->getFullTableName('ep_choice');
-		$this->tbl_ip		= $modx->getFullTableName('ep_userip');
-		$this->tbl_lang		= $modx->getFullTableName('ep_language');
-		$this->tbl_trans	= $modx->getFullTableName('ep_translation');
+        $this->langid = $this->getLangId();
+        if (!$this->archive) {
+            $this->pollid = $this->getPollId();
+            $this->voted = $this->getVotedStatus();
+        }
 
-		$this->templates = array();
-		$this->setupTemplate('tplVoteOuter');
-		$this->setupTemplate('tplVote');
-		$this->setupTemplate('tplResultOuter');
-		$this->setupTemplate('tplResult');
-		$this->setupTemplate('tplError');
+        $this->isInit = true;
+    }
 
-		$this->langid		= $this->getLangId();
-		if(!$this->archive){
-			$this->pollid = $this->getPollId();
-			$this->voted = $this->getVotedStatus();
-		}
-		$this->isinit = true;
-	}
+    /**
+     * Initialize the requested template. Fill the templates array
+     *
+     * @param string $key
+     *
+     * @throws Exception
+     */
+    protected function setupTemplate($key)
+    {
+        if ($this->config[$key]) {
+            $chunk = $this->config[$key];
+            $match = array();
+            if (preg_match('/^@FUNCTION(:|\s)\s*(\w+)/i', $chunk, $match)) {
+                if (!function_exists($match[2])) {
+                    throw new Exception('Template handler (' . $key . ') function does not exist. Function: ' . $match[2]);
+                }
 
-	/**
-	 * Initialize the requested template
-	 * Fill the templates array
-	 */
-	private function setupTemplate($key){
-		global $modx;
+                $this->templates[$key] = array(
+                    'value' => $match[2],
+                    'isfunction' => true
+                );
+            } else if (preg_match('/^@FUNCTIONCHUNK(:|\s)\s*(\w+)/i', $chunk, $match)) {
+                $content = $this->modx->getChunk($match[2]);
+                if (!$content) {
+                    throw new Exception('No chunk for @FUNCTIONCHUNK ' . $match[2]);
+                }
 
-		if($this->config[$key]){
-			$chunk = $this->config[$key];
-			$match = array();
-			if(preg_match('/^@FUNCTION(:|\s)\s*(\w+)/i', $chunk, $match)){
-				if(!function_exists($match[2]))
-					throw new Exception('Template handler ('. $key .') function does not exist. Function: ' . $match[2]);
+                $fmatch = array();
+                // look if there is a function definition
+                if (preg_match('/function\s+(\w+)/ims', $content, $fmatch)) {
+                    if (!function_exists($fmatch[1])) {
+                        // build the function
+                        if (eval($content) === false) {
+                            throw new Exception('Errors in function definition: ' . $chunk);
+                        }
+                    }
 
-				$this->templates[$key] = array('value' => $match[2], 'isfunction' => true);
-			} else if(preg_match('/^@FUNCTIONCHUNK(:|\s)\s*(\w+)/i', $chunk, $match)){
-				$content = $modx->getChunk($match[2]);
-				if(!$content)
-					throw new Exception('No chunk for @FUNCTIONCHUNK ' . $match[2]);
+                    $this->templates[$key] = array(
+                        'value' => $fmatch[1],
+                        'isfunction' => true
+                    );
+                } else {
+                    throw new Exception('No function definition in: ' . $chunk);
+                }
 
-				$fmatch = array();
-				// look if there is a function definition
-				if(preg_match('/function\s+(\w+)/ims', $content, $fmatch)){
-					if(!function_exists($fmatch[1])){
-						// build the function
-						if(eval($content) === false)
-							throw new Exception('Errors in function definition: ' . $chunk);
-					}
-					$this->templates[$key] = array('value' => $fmatch[1], 'isfunction' => true );
-				} else {
-					throw new Exception('No function definition in: ' . $chunk);
-				}
+            } else {
+                $this->templates[$key] = array(
+                    'value' => $this->modx->getChunk($chunk),
+                    'isfunction' => false
+                );
+            }
+        } else {
+            switch ($key) {
+                case 'tplVoteOuter':
+                    $this->templates[$key] = array(
+                        'value' => '<div class="pollvotes"><h3>[+question+]</h3><ul>[+choices+]</ul>[+submit+] [+results+]</div>',
+                        'isfunction' => false
+                    );
+                    break;
+                case 'tplResultOuter':
+                    $this->templates[$key] = array(
+                        'value' => '<div class="pollresults"><h3>[+question+]</h3><ul>[+choices+]</ul><p>[+totaltext+]: <strong>[+totalvotes+]</strong></p></div>',
+                        'isfunction' => false
+                    );
+                    break;
+                case 'tplVote':
+                    $this->templates[$key] = array(
+                        'value' => '<li><label>[+select+] <span>[+answer+]<span></label></li>',
+                        'isfunction' => false
+                    );
+                    break;
+                case 'tplResult':
+                    $this->templates[$key] = array(
+                        'value' =>
+                            '<li>' .
+                                '<div class="answer"><strong>[+answer+]</strong> ([+percent+]%)</div>' .
+                                '<div class="easypoll_bar">' .
+                                    '<div class="easypoll_inner" style="width:[+percent_int+]%"></div>' .
+                                    '<div class="easypoll_count">[+votes+]</div>' .
+                                '</div>' .
+                            '</li>',
+                        'isfunction' => false
+                    );
+                    break;
+                case 'tplError':
+                    $this->templates[$key] = array(
+                        'value' => '<div class="easypoll_error">[+message+]</div>',
+                        'isfunction' => false
+                    );
+                    break;
+            }
+        }
+    }
 
-			} else {
-				$this->templates[$key] = array('value' => $modx->getChunk($chunk), 'isfunction' => false);
-			}
-		} else {
-			switch($key){
-				case 'tplVoteOuter':
-					$this->templates[$key] = array(
-						'value' => '<div class="pollvotes"><h3>[+question+]</h3><ul>[+choices+]</ul>[+submit+] [+results+]</div>',
-						'isfunction' => false
-					);
-					break;
-				case 'tplResultOuter':
-					$this->templates[$key] = array(
-						'value' => '<div class="pollresults"><h3>[+question+]</h3><ul>[+choices+]</ul><p>[+totaltext+]: [+totalvotes+]</p></div>',
-						'isfunction' => false
-					);
-					break;
-				case 'tplVote':
-					$this->templates[$key] = array(
-						'value' => '<li>[+select+] [+answer+]</li>',
-						'isfunction' => false
-					);
-					break;
-				case 'tplResult':
-					$this->templates[$key] = array(
-						'value' => '<li><strong>[+answer+]</strong> ([+votes+] / [+percent+]%)<div class="easypoll_bar">' .
-								   '<div class="easypoll_inner" style="width:[+percent_int+]%"></div></div></li>',
-						'isfunction' => false
-					);
-					break;
-				case 'tplError':
-					$this->templates[$key] = array(
-						'value' => '<div class="easypoll_error">[+message+]</div>',
-						'isfunction' => false
-					);
-					break;
-			}
-		}
-	}
+    /**
+     * Lock the current user to prevent him from voting another time
+     */
+    protected function lockUser()
+    {
+        if (!$this->config['onevote']) {
+            return;
+        }
 
-	/**
-	 * Lock the current user to prevent him from voting another time
-	 */
-	private function lockUser(){
-		global $modx;
+        setcookie('EasyPoll' . $this->pollid, 'novote', time() + $this->config['ovtime'], '/');
 
-		if(!$this->config['onevote'])
-			return;
+        if ($this->config['useip']) {
+            $ip = $this->getUserIp();
+            $this->modx->db->insert(array(
+                'idPoll' => $this->pollid,
+                'ipAddress' => $ip
+            ), $this->tbl_ip);
+        }
+    }
 
-		setcookie('EasyPoll' . $this->pollid, 'novote', time() + $this->config['ovtime'], '/');
+    /**
+     * Submit a vote for a poll and store it into database
+     *
+     * @param int $choice The choice to vote for
+     *
+     * @return bool True If the vote was stored, false if not
+     */
+    protected function submitVote($choice)
+    {
+        if (!$choice = (int) $choice) {
+            return false;
+        }
 
-		if($this->config['useip']){
-			$ip = $this->getUserIp();
-			$rs = $modx->db->insert(array('idPoll' => $this->pollid, 'ipAddress' => $ip), $this->tbl_ip);
-		}
-	}
+        $query = 'UPDATE ' . $this->tbl_choice . ' SET Votes = Votes+1 WHERE idChoice=' . $choice . ' AND idPoll=' . $this->pollid;
+        $result = $this->modx->db->query($query);
 
-	/**
-	 * Submit a vote for a poll and store it into database
-	 * @param $choice the choice to vote for
-	 * @return true if the vote was stored, false if not
-	 */
-	private function submitVote($choice){
-		global $modx;
+        return $result == true;
+    }
 
-		$choice = intval($choice);
+    /**
+     * Return the Poll ID
+     * Checks if the poll exist in the database and if it's active and inside timeframe
+     *
+     * @return int The poll id
+     *
+     * @throws Exception when poll is non-existant or the language is not ready
+     */
+    protected function getPollId()
+    {
+        // we don't need to do this twice...
+        if (isset($this->pollid)) {
+            return $this->pollid;
+        }
 
-		if(!$choice)
-			return false;
+        $tmpid = 0;
 
-		$query = 'UPDATE ' . $this->tbl_choice . ' SET Votes = Votes+1 WHERE idChoice=' . $choice . ' AND idPoll=' . $this->pollid;
-		$result = $modx->db->query($query);
+        if ($this->config['pollid'] == false) {
+            $rs = $this->modx->db->select(
+                'p.idPoll',
+                $this->tbl_poll . ' p',
+                'isActive=1 AND StartDate <= NOW() AND (EndDate = 0 || EndDate >= NOW())
+				AND (SELECT COUNT(c.idPoll) FROM ' . $this->tbl_choice . ' c WHERE c.idPoll=p.idPoll) > 0',
+                'p.StartDate DESC',
+                '1'
+            );
 
-		return $result == true;
-	}
+            //TODO: Make this translatable or customizable as well
+            if ($this->modx->db->getRecordCount($rs) == 0) {
+                throw new Exception('No polls available at this time.', 128);
+            }
 
-	/**
-	 * Return the poll id.
-	 * Checks if the poll exist in the database and if it's active and inside
-	 * timeframe.
-	 * @return the poll id
-	 * @throws Exception when poll is non-existant or the language is not ready
-	 */
-	private function getPollId(){
-		global $modx;
+            $row = $this->modx->db->getRow($rs);
+            $tmpid = $row['idPoll'];
+        } else {
+            $tmpid = intval($this->config['pollid']);
+            $rs = $this->modx->db->select(
+                'p.idPoll',
+                $this->tbl_poll . ' p',
+                'idPoll=' . $tmpid . ' AND isActive=1 AND StartDate <= NOW() AND (EndDate = 0 || EndDate >= NOW())
+				AND (SELECT COUNT(c.idPoll) FROM ' . $this->tbl_choice . ' c WHERE c.idPoll=p.idPoll) > 0'
+            );
 
-		// we don't need to do this twice...
-		if(isset($this->pollid))
-			return $this->pollid;
+            if ($this->modx->db->getRecordCount($rs) == 0)
+                throw new Exception("The poll with id {$tmpid} is not available");
+        }
 
-		$tmpid = 0;
+        // if we're here, $tmpid will have a valid poll id! now we check if desired language is available
+        $query = '
+    	SELECT (SELECT COUNT(t.idPoll) FROM ' . $this->tbl_trans . ' t WHERE t.idPoll=' . $tmpid . ' AND t.idLang=' . $this->langid . ')
+    	- (SELECT COUNT(c.idPoll)+1 FROM ' . $this->tbl_choice . ' c WHERE c.idPoll=' . $tmpid . ') AS \'diff\'';
 
-		if($this->config['pollid'] == false){
-			$rs = $modx->db->select
-			(
-				'p.idPoll',
-				$this->tbl_poll . ' p',
-				'isActive=1 AND StartDate <= NOW() AND (EndDate = 0 || EndDate >= NOW())
-				AND (SELECT COUNT(c.idPoll) FROM '. $this->tbl_choice .' c WHERE c.idPoll=p.idPoll) > 0',
-				'p.StartDate DESC',
-				'1'
-			);
+        $rs = $this->modx->db->query($query);
+        $row = $this->modx->db->getRow($rs);
+        // diff must be 0, otherwise not all items are translated!
+        $diff = $row['diff'];
+        if ($diff != 0) {
+            throw new Exception('The language (' . $this->config['easylang'] . ') cannot be used yet, because not all items are translated! Please translate items using the EasyPoll Manager');
+        }
 
-			//TODO: Make this translatable or customizable as well
-			if($modx->db->getRecordCount($rs) == 0)
-				throw new Exception('No polls available at this time.', 128);
+        return $tmpid;
+    }
 
-			$row = $modx->db->getRow($rs);
-			$tmpid = $row['idPoll'];
-		} else {
-			$tmpid = intval($this->config['pollid']);
-			$rs = $modx->db->select
-			(
-				'p.idPoll',
-				$this->tbl_poll . ' p',
-				'idPoll=' . $tmpid . ' AND isActive=1 AND StartDate <= NOW() AND (EndDate = 0 || EndDate >= NOW())
-				AND (SELECT COUNT(c.idPoll) FROM '. $this->tbl_choice .' c WHERE c.idPoll=p.idPoll) > 0'
-			);
+    /**
+     * Get the language id
+     *
+     * @return int The language id
+     *
+     * @throws Exception
+     */
+    protected function getLangId()
+    {
+        if ($this->langid) {
+            return $this->langid;
+        }
 
-			if($modx->db->getRecordCount($rs) == 0)
-				throw new Exception('The poll with id ' . $tmpid . ' is not available');
-		}
+        $rs = $this->modx->db->select('idLang', $this->tbl_lang, "LangShort = '{$this->config['easylang']}'");
+        if ($this->modx->db->getRecordCount($rs) == 0) {
+            throw new Exception("The language ({$this->config['easylang']}) specified in the snippet call is not defined!", 1);
+        }
 
-		// if we're here, $tmpid will have a valid poll id! now we check if desired language is available
-    	$query = '
-    	SELECT (SELECT COUNT(t.idPoll) FROM '. $this->tbl_trans .' t WHERE t.idPoll='. $tmpid .' AND t.idLang='. $this->langid .')
-    	- (SELECT COUNT(c.idPoll)+1 FROM '. $this->tbl_choice .' c WHERE c.idPoll='. $tmpid .') AS \'diff\'';
+        $row = $this->modx->db->getRow($rs);
 
-    	$rs = $modx->db->query($query);
-    	$row = $modx->db->getRow($rs);
-    	// diff must be 0, otherwise not all items are translated!
-    	$diff = $row['diff'];
-    	if($diff != 0)
-    		throw new Exception('The language (' . $this->config['easylang'] . ') cannot be used yet, because not all items are translated!'.
-    		' Please translate items using the EasyPoll Manager');
+        return $row['idLang'];
+    }
 
-    	return $tmpid;
-	}
+    /**
+     * Get the flag if the user has already voted
+     *
+     * @return bool True if the user has voted already, False if not
+     */
+    protected function getVotedStatus()
+    {
+        // no need to invesitgate further when onevote is disabled
+        if (!$this->config['onevote']) {
+            return false;
+        }
 
-	/**
-	 * Get the language id
-	 * @return the language id
-	 */
-	private function getLangId(){
-		global $modx;
+        // status flag is already set. return
+        if ($this->voted === true) {
+            return true;
+        }
 
-		if($this->langid)
-			return $this->langid;
+        // check the cookie for status
+        if (isset($_COOKIE["EasyPoll{$this->pollid}"])) {
+            return true;
+        }
 
-		$rs = $modx->db->select('idLang', $this->tbl_lang, 'LangShort=\'' . $this->config['easylang'] .'\'');
-		if($modx->db->getRecordCount($rs) == 0)
-			throw new Exception('The language (' . $this->config['easylang'] . ') specified in the snippet call is not defined!', 1);
+        // if ip option is set, check for user ip
+        if ($this->config['useip']) {
+            $userip = $this->getUserIp();
+            $rs = $this->modx->db->select('idPoll', $this->tbl_ip, "idPoll = {$this->pollid} AND ipAddress='{$userip}'");
+            if ($this->modx->db->getRecordCount($rs) > 0) {
+                return true;
+            }
+        }
 
-		$row = $modx->db->getRow($rs);
-		return $row['idLang'];
-	}
+        // done checking everything. must not have voted yet
+        return false;
+    }
 
-	/**
-	 * Get the flag if the user has already voted
-	 * @return true if the user has voted already, false if not
-	 */
-	private function getVotedStatus(){
-		global $modx;
+    /**
+     * Replace all placeholders of tplString with the values from $fields
+     *
+     * @param array $fields array containing all key -> values to insert
+     * @param string $tplString string the template string with placeholders
+     *
+     * @return string the template with filled placeholders
+     */
+    protected function tplReplace(array & $fields, $tplString)
+    {
+        $buf = $tplString;
+        foreach ($fields as $k => $v) {
+            $buf = str_replace('[+' . $k . '+]', $v, $buf);
+        }
+        return $buf;
+    }
 
-		// no need to invesitgate further when onevote is disabled
-		if(!$this->config['onevote'])
-			return false;
+    /**
+     * Get the users ip address. Taken from the original snippet by garryn
+     *
+     * @return string The user ip address
+     */
+    protected function getUserIp()
+    {
+        // This returns the True IP of the client calling the requested page
+        // Checks to see if HTTP_X_FORWARDED_FOR
+        // has a value then the client is operating via a proxy
+        if ($_SERVER['HTTP_CLIENT_IP'] <> '') {
+            $userIP = $_SERVER['HTTP_CLIENT_IP'];
+        } elseif ($_SERVER['HTTP_X_FORWARDED_FOR'] <> '') {
+            $userIP = $_SERVER['HTTP_X_FORWARDED_FOR'];
+        } elseif ($_SERVER['HTTP_X_FORWARDED'] <> '') {
+            $userIP = $_SERVER['HTTP_X_FORWARDED'];
+        } elseif ($_SERVER['HTTP_FORWARDED_FOR'] <> '') {
+            $userIP = $_SERVER['HTTP_FORWARDED_FOR'];
+        } elseif ($_SERVER['HTTP_FORWARDED_FOR'] <> '') {
+            $userIP = $_SERVER['HTTP_FORWARDED_FOR'];
+        } else {
+            $userIP = $_SERVER['REMOTE_ADDR'];
+        }
 
-		// status flag is already set. return
-		if($this->voted === true)
-			return true;
+        // return the IP we've figured out:
+        return $userIP;
+    }
 
-		// check the cookie for status
-		if(isset($_COOKIE['EasyPoll' . $this->pollid]))
-			return true;
+    protected function choise($id)
+    {
+        return '<input type="radio" name="poll_choice" value="' . $id . '"/>';
+    }
 
-		// if ip option is set, check for user ip
-		if($this->config['useip']){
-			$userip = $this->getUserIp();
-			$rs = $modx->db->select('idPoll', $this->tbl_ip, 'idPoll=' . $this->pollid . ' AND ipAddress=\'' . $userip .'\'');
-			if($modx->db->getRecordCount($rs) > 0)
-				return true;
-		}
-
-		// done checking everything. must not have voted yet
-		return false;
-	}
-
-	/**
-	 * Replace all placeholders of tplString with the values
-	 * from $fields
-	 * @param $field array containing all key -> values to insert
-	 * @param $tplString string the template string with placeholders
-	 * @return string the template with filled placeholders
-	 */
-	private function tplReplace(array &$fields, $tplString){
-		$buf = $tplString;
-		foreach($fields as $k => $v){
-			$buf = str_replace('[+'. $k .'+]', $v, $buf);
-		}
-		return $buf;
-	}
-
-	/**
-	 * Get the users ip address. taken from the original snippet by garryn
-	 * @return the user ip address
-	 */
-	private function getUserIp() {
-		// This returns the True IP of the client calling the requested page
-		// Checks to see if HTTP_X_FORWARDED_FOR
-		// has a value then the client is operating via a proxy
-		if ($_SERVER['HTTP_CLIENT_IP'] <> '') {
-			$userIP = $_SERVER['HTTP_CLIENT_IP'];
-		}
-		elseif ($_SERVER['HTTP_X_FORWARDED_FOR'] <> '') {
-			$userIP = $_SERVER['HTTP_X_FORWARDED_FOR'];
-		}
-		elseif ($_SERVER['HTTP_X_FORWARDED'] <> '') {
-			$userIP = $_SERVER['HTTP_X_FORWARDED'];
-		}
-		elseif ($_SERVER['HTTP_FORWARDED_FOR'] <> '') {
-			$userIP = $_SERVER['HTTP_FORWARDED_FOR'];
-		}
-		elseif ($_SERVER['HTTP_FORWARDED_FOR'] <> '') {
-			$userIP = $_SERVER['HTTP_FORWARDED_FOR'];
-		} else {
-			$userIP = $_SERVER['REMOTE_ADDR'];
-		}
-		// return the IP we've figured out:
-		return $userIP;
-	}
+    protected function entity($string)
+    {
+        return htmlentities($string, ENT_COMPAT, 'UTF-8');
+    }
 }
-?>

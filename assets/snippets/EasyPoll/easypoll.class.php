@@ -253,7 +253,9 @@ class EasyPoll
             'submit' => '<input type="submit" name="submit" class="pollbutton" value="' . $this->lang['vote']
                 . '" id="' . $idf . 'submit"/>',
             'results' => '<input type="submit" name="result" class="pollbutton" id="' . $idf . 'result" value="' . $this->lang['results'] . '" />',
-            'choices' => $buf
+            'choices' => $buf,
+            'totalvotes' => $numvotes,
+            'totaltext' => $this->lang['totalvotes'],
         );
 
         if ($this->templates['tplVoteOuter']['isfunction']) {
@@ -494,7 +496,7 @@ class EasyPoll
             switch ($key) {
                 case 'tplVoteOuter':
                     $this->templates[$key] = array(
-                        'value' => '<div class="pollvotes"><h3>[+question+]</h3><ul>[+choices+]</ul>[+submit+] [+results+]</div>',
+                        'value' => '<div class="pollvotes"><h3>[+question+]</h3><ul>[+choices+]</ul>[+submit+] [+results+]<span class="votes">[+totaltext+]: <strong>[+totalvotes+]</strong></span></div>',
                         'isfunction' => false
                     );
                     break;

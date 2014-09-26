@@ -19,6 +19,11 @@
 	box-shadow: 1px 1px 2px #BBB;
 	background-color: #FFF;
 }
+.pollvotes .votes {
+	font-size: 0.9em;
+	vertical-align: middle;
+	margin-left: 15px;
+}
 .pollvotes h3, .pollresults h3 {
 	line-height: 140%;
 	border-bottom: 1px solid #e7eaed;

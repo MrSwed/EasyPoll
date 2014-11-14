@@ -12,3 +12,4 @@ $_lang['back'] = 'Terug naar stemmen';
 $_lang['alreadyvoted'] = 'U mag maar 1 keer stemmen';
 $_lang['totalvotes'] = 'Totaal aantal stemmen';
 $_lang['error'] = 'Er is een fout opgetreden. Heeft u wel iets geselecteerd?';
+$_lang['noResults'] = 'Ingen afstemninger tilgængelige på dette tidspunkt.';

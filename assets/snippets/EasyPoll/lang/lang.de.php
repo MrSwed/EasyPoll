@@ -12,3 +12,4 @@ $_lang['back'] = 'Zurück zur Abstimmung';
 $_lang['alreadyvoted'] = 'Du darfst nur einmal abstimmen';
 $_lang['totalvotes'] = 'Anzahl Stimmen';
 $_lang['error'] = 'Beim Bearbeiten ist ein Fehler aufgetreten. Hast du eine Option gewählt?';
+$_lang['noResults'] = 'Keine Abstimmungen Verfügung zu diesem Zeitpunkt.';

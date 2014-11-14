@@ -603,7 +603,7 @@ class EasyPoll
 
             //TODO: Make this translatable or customizable as well
             if ($this->modx->db->getRecordCount($rs) == 0) {
-                throw new Exception('No polls available at this time.', 128);
+                throw new Exception($this->config['noResults']!==false?$this->config['noResults']:$this->lang['noResults'], 128);
             }
 
             $row = $this->modx->db->getRow($rs);

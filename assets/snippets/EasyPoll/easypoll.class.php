@@ -508,7 +508,7 @@ class EasyPoll
                     break;
                 case 'tplVote':
                     $this->templates[$key] = array(
-                        'value' => '<li><label>[+select+] <span>[+answer+]<span></label></li>',
+                        'value' => '<li><label>[+select+] <span>[+answer+]</span></label></li>',
                         'isfunction' => false
                     );
                     break;

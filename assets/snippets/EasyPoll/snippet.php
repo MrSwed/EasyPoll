@@ -31,7 +31,7 @@
 // set up parameters
 $config = array();
 $config['lang'] = isset($lang) && preg_match('/^[a-z]{2,3}$/', $lang) ? $lang : 'en';
-$config['easylang'] = isset($easylang) && preg_match('/^[a-z]{1,3}$/', $easylang) ? $easylang : $config['lang'];
+$config['easylang'] = isset($easylang) && preg_match('/^[a-z]{2,3}$/', $easylang) ? $easylang : $config['lang'];
 $config['pollid'] = isset($pollid) ? intval($pollid) : false;
 $config['onevote'] = isset($onevote) ? $onevote == true : false;
 $config['useip'] = isset($useip) ? $useip == true : false;
@@ -71,11 +71,12 @@ if (!file_exists($classfile)) {
 
 // include files
 $_lang = array();
-require($langfile);
-require_once($classfile);
+require $langfile;
+require_once $classfile;
 
 try {
     $handler = new EasyPoll($modx, $config, $_lang);
+
     return $handler->generateOutput();
 } catch (Exception $e) {
     // only display the exception if we have a error code above 0. otherwise remain silent

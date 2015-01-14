@@ -79,10 +79,10 @@ class EasyPoll
      * Constructor
      *
      * @param DocumentParser $modx
-     * @param array $config configuration parameters, coming from the snippet
-     * @param array $lang array containing language specific strings
+     * @param array $config Configuration parameters, coming from the snippet
+     * @param array $lang Array containing language specific strings
      */
-    public function __construct(DocumentParser & $modx, array &$config, array &$lang)
+    public function __construct(DocumentParser & $modx, array & $config, array & $lang)
     {
         $this->modx =& $modx;
         $this->config =& $config;
@@ -110,7 +110,7 @@ class EasyPoll
         if (!$this->config['noajax'] && !empty($_POST['ajxrequest']) && $_POST['ajxrequest'] == 1) {
             // we check if this really concerns us
             if (!$isThisPoll) {
-                return;
+                return '';
             }
 
             // remove the parameter to not trigger an infinite loop
@@ -409,15 +409,11 @@ class EasyPoll
     /**
      * Initialize items
      *
-     * @return null
-     *
      * @throws Exception
      */
     protected function init()
     {
-        if ($this->isInit) {
-            return;
-        }
+        if ($this->isInit) return;
 
         $this->tbl_poll = $this->modx->getFullTableName('ep_poll');
         $this->tbl_choice = $this->modx->getFullTableName('ep_choice');

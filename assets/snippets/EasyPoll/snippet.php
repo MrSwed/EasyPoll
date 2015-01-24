@@ -31,7 +31,7 @@
 // set up parameters
 $config = array();
 $config['lang'] = isset($lang) && preg_match('/^[a-z]{2,3}$/', $lang) ? $lang : 'en';
-$config['easylang'] = isset($easylang) && preg_match('/^[a-z]{1,3}$/', $easylang) ? $easylang : $config['lang'];
+$config['easylang'] = isset($easylang) && preg_match('/^[a-z]{2,3}$/', $easylang) ? $easylang : $config['lang'];
 $config['pollid'] = isset($pollid) ? intval($pollid) : false;
 $config['onevote'] = isset($onevote) ? $onevote == true : false;
 $config['useip'] = isset($useip) ? $useip == true : false;
@@ -43,10 +43,14 @@ $config['skipfirst'] = isset($skipfirst) ? $skipfirst == true : false;
 $config['css'] = isset($css) && $css !== '' ? $css : '/assets/snippets/EasyPoll/poll.css';
 $config['identifier'] = isset($identifier) ? $identifier : 'easypoll';
 $config['accuracy'] = isset($accuracy) ? intval($accuracy) : 1;
+$config['tplPoll'] = isset($tplPoll) ? $tplPoll : false;
 $config['tplVoteOuter'] = isset($tplVoteOuter) ? $tplVoteOuter : false;
 $config['tplVote'] = isset($tplVote) ? $tplVote : false;
 $config['tplResultOuter'] = isset($tplResultOuter) ? $tplResultOuter : false;
 $config['tplResult'] = isset($tplResult) ? $tplResult : false;
+$config['tplChoice'] = isset($tplChoice) ? $tplChoice : false;
+$config['tplSubmitBtn'] = isset($tplSubmitBtn) ? $tplSubmitBtn : false;
+$config['tplResultBtn'] = isset($tplResultBtn) ? $tplResultBtn : false;
 $config['ovtime'] = isset($ovtime) ? intval($ovtime) : 608400;
 $config['jscallback'] = isset($jscallback) ? $jscallback : false;
 $config['customjs'] = isset($customjs) ? $customjs : false;
@@ -71,11 +75,12 @@ if (!file_exists($classfile)) {
 
 // include files
 $_lang = array();
-require($langfile);
-require_once($classfile);
+require $langfile;
+require_once $classfile;
 
 try {
     $handler = new EasyPoll($modx, $config, $_lang);
+
     return $handler->generateOutput();
 } catch (Exception $e) {
     // only display the exception if we have a error code above 0. otherwise remain silent

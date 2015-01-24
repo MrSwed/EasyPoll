@@ -6,15 +6,23 @@
  * @version 0.3.4 <2014-09-23>
  */
 .easypoll {
-	margin: 0;
+	margin-bottom: 20px;
+}
+.pollvotes:last-child, .pollresults:last-child {
+	margin-bottom: 0;
 }
 .pollvotes, .pollresults {
 	padding: 5px 10px 10px 12px;
-	margin: 0;
+	margin-bottom: 20px;
 	font-family: tahoma, arial, verdana, sans-serif;
 	font-size: 14px;
-	box-shadow: 1px 1px 2px #bbb;
-	background-color: #fff;
+	box-shadow: 1px 1px 2px #BBB;
+	background-color: #FFF;
+}
+.pollvotes .votes {
+	font-size: 0.9em;
+	vertical-align: middle;
+	margin-left: 15px;
 }
 .pollvotes h3, .pollresults h3 {
 	line-height: 140%;

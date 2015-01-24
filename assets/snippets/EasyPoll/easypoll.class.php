@@ -73,7 +73,7 @@ class EasyPoll
     /**
      * @var array Templates
      */
-    protected $templates;
+    protected $templates = array();
 
     /**
      * Constructor
@@ -103,8 +103,11 @@ class EasyPoll
             return $this->generateArchive();
         }
 
+        /** @var string $idf Poll Identifier */
+        $idf = $this->config['identifier'];
+
         // store a flag if this is the right poll... necessary for multiple poll handling
-        $isThisPoll = (isset($_POST['idf']) && $_POST['idf'] == $this->config['identifier']);
+        $isThisPoll = (isset($_POST['idf']) && $_POST['idf'] == $idf);
 
         // check if we're dealing with a ajaxrequest here
         if (!$this->config['noajax'] && !empty($_POST['ajxrequest']) && $_POST['ajxrequest'] == 1) {
@@ -124,12 +127,9 @@ class EasyPoll
         if (isset($_POST['submit']) && $isThisPoll) {
             // if this user has voted already, return message
             if ($this->voted) {
-                $values = array('message' => $this->lang['alreadyvoted']);
-                if ($this->templates['tplError']['isfunction']) {
-                    return call_user_func($this->templates['tplError']['value'], $values, 'tplError');
-                } else {
-                    return $this->tplReplace($values, $this->templates['tplError']['value']);
-                }
+                return $this->renderTemplate('tplError', array(
+                    'message' => $this->lang['alreadyvoted']
+                ));
             }
 
             $success = $this->submitVote(intval($_POST['poll_choice']));
@@ -138,12 +138,9 @@ class EasyPoll
                 $this->lockUser();
                 $this->voted = true;
             } else {
-                $values = array('message' => $this->lang['error']);
-                if ($this->templates['tplError']['isfunction']) {
-                    return call_user_func($this->templates['tplError']['value'], $values, 'tplError');
-                } else {
-                    return $this->tplReplace($values, $this->templates['tplError']['value']);
-                }
+                return $this->renderTemplate('tplError', array(
+                    'message' => $this->lang['error']
+                ));
             }
         }
 
@@ -170,7 +167,7 @@ class EasyPoll
         if ($this->voted || ($isThisPoll && isset($_GET['showresults'])) || isset($_POST['result'])) {
             $choicequery .= $this->config['votesorting'];
 
-            $buf = '';
+            $choices = '';
             $rs = $this->modx->db->query($choicequery);
             while ($row = $this->modx->db->getRow($rs)) {
                 if ($numvotes > 0) {
@@ -180,35 +177,22 @@ class EasyPoll
                     $perc = $perc_int = 0;
                 }
 
-                $values = array(
+                $choices .= $this->renderTemplate('tplResult', array(
                     'answer' => $row['title'],
                     'percent' => $perc,
                     'percent_int' => $perc_int,
                     'votes' => $row['votes']
-                );
-
-                if ($this->templates['tplResult']['isfunction']) {
-                    $buf .= call_user_func($this->templates['tplResult']['value'], $values, 'tplResult');
-                } else {
-                    $buf .= $this->tplReplace($values, $this->templates['tplResult']['value']);
-                }
+                ));
             }
 
             //TODO: if user has not voted, display button to take him back to voting screen?
-            $values = array(
+            return $this->renderTemplate('tplResultOuter', array(
                 'question' => $title,
                 'totalvotes' => $numvotes,
                 'totaltext' => $this->lang['totalvotes'],
-                'choices' => $buf
-            );
-
-            if ($this->templates['tplResultOuter']['isfunction']) {
-                $buffer = call_user_func($this->templates['tplResultOuter']['value'], $values, 'tplResultOuter');
-            } else {
-                $buffer = $this->tplReplace($values, $this->templates['tplResultOuter']['value']);
-            }
-
-            return $buffer;
+                'choices' => $choices,
+                'idf' => $idf
+            ));
         }
 
         // request jQuery unless specified otherwise
@@ -223,48 +207,35 @@ class EasyPoll
 
         $url = $this->modx->makeUrl($this->modx->documentObject['id'], '', '&showresults=1');
         $urlajax = $this->modx->makeUrl($this->modx->documentObject['id'], '', '');
-
         $callback = $this->config['jscallback'] ? $this->config['jscallback'] : 'EasyPoll_DefaultCallback';
-
-        $idf = $this->config['identifier'];
-        $header = '
-		<div id="' . $idf . '" class="easypoll"><form name="' . $idf . 'form" id="' . $idf . 'form" method="POST" action="' . $url . '">
-		<fieldset><input type="hidden" id="' . $idf . 'ajx" name="ajxrequest" value="0"/>
-		<input type="hidden" name="pollid" value="' . $this->pollid . '"/><input type="hidden" name="idf" value="' . $idf . '"/>';
-
         $choicequery .= 'Sorting ASC';
-        $rs = $this->modx->db->query($choicequery);
-        $buf = '';
-        while ($row = $this->modx->db->getRow($rs)) {
-            $values = array(
-                'answer' => $this->entity($row['title']),
-                'select' => $this->choise($row['choiceid']),
-            );
+        $choices = '';
 
-            if ($this->templates['tplVote']['isfunction']) {
-                $buf .= call_user_func($this->templates['tplVote']['value'], $values, 'tplVote');
-            } else {
-                $buf .= $this->tplReplace($values, $this->templates['tplVote']['value']);
-            }
+        $rs = $this->modx->db->query($choicequery);
+        while ($row = $this->modx->db->getRow($rs)) {
+            $choices .= $this->renderTemplate('tplVote', array(
+                'choiceid' => $row['choiceid'],
+                'answer' => $this->entity($row['title']),
+                'select' => $this->renderTemplate('tplChoice', $row),
+            ));
         }
 
-        $values = array(
+        $inner = $this->renderTemplate('tplVoteOuter', array(
             'question' => $this->entity($title),
-            'submit' => '<input type="submit" name="submit" class="pollbutton" value="' . $this->lang['vote']
-                . '" id="' . $idf . 'submit"/>',
-            'results' => '<input type="submit" name="result" class="pollbutton" id="' . $idf . 'result" value="' . $this->lang['results'] . '" />',
-            'choices' => $buf,
+            'submit' => $this->renderTemplate('tplSubmitBtn', array(
+                'value' => $this->lang['vote'],
+                'idf' => $idf
+            )),
+            'results' => $this->renderTemplate('tplResultBtn', array(
+                'value' => $this->lang['results'],
+                'idf' => $idf
+            )),
+            'choices' => $choices,
             'totalvotes' => $numvotes,
             'totaltext' => $this->lang['totalvotes'],
-        );
+        ));
 
-        if ($this->templates['tplVoteOuter']['isfunction']) {
-            $buffer = call_user_func($this->templates['tplVoteOuter']['value'], $values, 'tplVoteOuter');
-        } else {
-            $buffer = $this->tplReplace($values, $this->templates['tplVoteOuter']['value']);
-        }
-        $buffer = $header . $buffer . '</fieldset></form></div>';
-
+        $js = '';
         // request any external js file if needed
         if ($this->config['customjs']) {
             $match = array();
@@ -275,14 +246,14 @@ class EasyPoll
             }
 
             if (preg_match('/^<script/i', $js)) {
-                $buffer .= $js;
+                $js .= $js;
             } else {
                 $this->modx->regClientStartupScript($js);
             }
         }
 
         if (!$this->config['noajax']) {
-            $buffer .= '
+            $js .= '
 			<script type="text/javascript">
 			// <!--
 			var js' . $idf . ' = new EasyPollAjax("' . $idf . '", "' . $urlajax . '");
@@ -294,7 +265,13 @@ class EasyPoll
 			';
         }
 
-        return $buffer;
+        return $this->renderTemplate('tplPoll', array(
+            'idf' => $idf,
+            'pollid' => $this->pollid,
+            'url' => $url,
+            'inner' => $inner,
+            'js' => $js,
+        ));
     }
 
     /**
@@ -345,7 +322,7 @@ class EasyPoll
 			FROM ' . $this->tbl_choice . ' c LEFT OUTER JOIN ' . $this->tbl_trans . ' t ON c.idChoice = t.idChoice
 			WHERE c.idPoll=' . $row['pollid'] . ' AND t.idLang=' . $this->langid . ' ORDER BY c.' . $this->config['votesorting'];
 
-            $buf = '';
+            $choices = '';
             $rs2 = $this->modx->db->query($choicequery);
             while ($row2 = $this->modx->db->getRow($rs2)) {
                 if ($numvotes > 0) {
@@ -355,31 +332,20 @@ class EasyPoll
                     $perc = $perc_int = 0;
                 }
 
-                $values = array(
+                $choices .= $this->renderTemplate('tplResult', array(
                     'answer' => $this->entity($row2['title']),
                     'percent' => $perc,
                     'percent_int' => $perc_int,
                     'votes' => $row2['votes']
-                );
-
-                if ($this->templates['tplResult']['isfunction']) {
-                    $buf .= call_user_func($this->templates['tplResult']['value'], $values, 'tplResult');
-                } else {
-                    $buf .= $this->tplReplace($values, $this->templates['tplResult']['value']);
-                }
+                ));
             }
-            $values = array(
+
+            $buffer = $this->renderTemplate('tplResultOuter', array(
                 'question' => $this->entity($title),
                 'totalvotes' => $numvotes,
                 'totaltext' => $this->lang['totalvotes'],
-                'choices' => $buf
-            );
-
-            if ($this->templates['tplResultOuter']['isfunction']) {
-                $buffer = call_user_func($this->templates['tplResultOuter']['value'], $values, 'tplResultOuter');
-            } else {
-                $buffer = $this->tplReplace($values, $this->templates['tplResultOuter']['value']);
-            }
+                'choices' => $choices
+            ));
 
             $output .= $buffer;
         }
@@ -422,11 +388,15 @@ class EasyPoll
         $this->tbl_trans = $this->modx->getFullTableName('ep_translation');
 
         $this->templates = array();
+        $this->setupTemplate('tplPoll');
         $this->setupTemplate('tplVoteOuter');
         $this->setupTemplate('tplVote');
         $this->setupTemplate('tplResultOuter');
         $this->setupTemplate('tplResult');
         $this->setupTemplate('tplError');
+        $this->setupTemplate('tplChoice');
+        $this->setupTemplate('tplSubmitBtn');
+        $this->setupTemplate('tplResultBtn');
 
         $this->langid = $this->getLangId();
         if (!$this->archive) {
@@ -451,17 +421,17 @@ class EasyPoll
             $match = array();
             if (preg_match('/^@FUNCTION(:|\s)\s*(\w+)/i', $chunk, $match)) {
                 if (!function_exists($match[2])) {
-                    throw new Exception('Template handler (' . $key . ') function does not exist. Function: ' . $match[2]);
+                    throw new Exception("Template handler ({$key}) function does not exist. Function: {$match[2]}");
                 }
 
                 $this->templates[$key] = array(
                     'value' => $match[2],
                     'isfunction' => true
                 );
-            } else if (preg_match('/^@FUNCTIONCHUNK(:|\s)\s*(\w+)/i', $chunk, $match)) {
+            } elseif (preg_match('/^@FUNCTIONCHUNK(:|\s)\s*(\w+)/i', $chunk, $match)) {
                 $content = $this->modx->getChunk($match[2]);
                 if (!$content) {
-                    throw new Exception('No chunk for @FUNCTIONCHUNK ' . $match[2]);
+                    throw new Exception("No chunk for @FUNCTIONCHUNK {$match[2]}");
                 }
 
                 $fmatch = array();
@@ -470,7 +440,7 @@ class EasyPoll
                     if (!function_exists($fmatch[1])) {
                         // build the function
                         if (eval($content) === false) {
-                            throw new Exception('Errors in function definition: ' . $chunk);
+                            throw new Exception("Errors in function definition: {$chunk}");
                         }
                     }
 
@@ -479,7 +449,7 @@ class EasyPoll
                         'isfunction' => true
                     );
                 } else {
-                    throw new Exception('No function definition in: ' . $chunk);
+                    throw new Exception("No function definition in: {$chunk}");
                 }
 
             } else {
@@ -498,7 +468,7 @@ class EasyPoll
                     break;
                 case 'tplResultOuter':
                     $this->templates[$key] = array(
-                        'value' => '<div class="pollresults"><h3>[+question+]</h3><ul>[+choices+]</ul><p>[+totaltext+]: <strong>[+totalvotes+]</strong></p></div>',
+                        'value' => '<div id="[+idf+]" class="easypoll pollresults"><h3>[+question+]</h3><ul>[+choices+]</ul><p>[+totaltext+]: <strong>[+totalvotes+]</strong></p></div>',
                         'isfunction' => false
                     );
                     break;
@@ -524,6 +494,41 @@ class EasyPoll
                 case 'tplError':
                     $this->templates[$key] = array(
                         'value' => '<div class="easypoll_error">[+message+]</div>',
+                        'isfunction' => false
+                    );
+                    break;
+                case 'tplChoice':
+                    $this->templates[$key] = array(
+                        'value' => '<input type="radio" class="easypoll_choice easypoll_choice_[+choiceid+]" name="poll_choice" value="[+choiceid+]"/>',
+                        'isfunction' => false
+                    );
+                    break;
+                case 'tplSubmitBtn':
+                    $this->templates[$key] = array(
+                        'value' => '<input type="submit" name="submit" class="pollbutton" id="[+idf+]submit" value="[+value+]" />',
+                        'isfunction' => false
+                    );
+                    break;
+                case 'tplResultBtn':
+                    $this->templates[$key] = array(
+                        'value' => '<input type="submit" name="result" class="pollbutton" id="[+idf+]result" value="[+value+]" />',
+                        'isfunction' => false
+                    );
+                    break;
+                case 'tplPoll':
+                    $this->templates[$key] = array(
+                        'value' =>
+                            '<div id="[+idf+]" class="easypoll">' .
+                            '<form name="[+idf+]form" id="[+idf+]form" method="POST" action="[+url+]">' .
+                                '<fieldset>' .
+                                    '<input type="hidden" id="[+idf+]ajx" name="ajxrequest" value="0"/>' .
+                                    '<input type="hidden" name="pollid" value="[+pollid+]"/>' .
+                                    '<input type="hidden" name="idf" value="[+idf+]"/>' .
+                                    '[+inner+]' .
+                                '</fieldset>' .
+                            '</form>' .
+                            '[+js+]' .
+                            '</div>',
                         'isfunction' => false
                     );
                     break;
@@ -736,13 +741,21 @@ class EasyPoll
         return $userIP;
     }
 
-    protected function choise($id)
-    {
-        return '<input type="radio" name="poll_choice" value="' . $id . '"/>';
-    }
-
     protected function entity($string)
     {
         return htmlentities($string, ENT_COMPAT, 'UTF-8');
+    }
+
+    protected function renderTemplate($tpl, array $values = array())
+    {
+        if (!isset($this->templates[$tpl])) return '';
+
+        $template =& $this->templates[$tpl];
+
+        if ($template['isfunction']) {
+            return call_user_func($template['value'], $values, $template);
+        } else {
+            return $this->tplReplace($values, $template['value']);
+        }
     }
 }

@@ -12,3 +12,4 @@ $_lang['back'] = 'Retour à la page vote';
 $_lang['alreadyvoted'] = 'Tu as le droit de voter uniquement une fois';
 $_lang['totalvotes'] = 'Nombre de voix';
 $_lang['error'] = 'Une erreur s’est produite lors du traitement des données. As-tu sélectionné une option?';
+$_lang['noResults'] = 'Aucun sondage disponible pour le moment.';

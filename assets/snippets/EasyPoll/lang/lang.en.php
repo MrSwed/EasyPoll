@@ -12,3 +12,4 @@ $_lang['back'] = 'Back to vote';
 $_lang['alreadyvoted'] = 'You are only allowed to vote once';
 $_lang['totalvotes'] = 'Number of votes';
 $_lang['error'] = 'An error has occurred during data transfer. Did you select an option?';
+$_lang['noResults'] = 'No polls available at this time.';

@@ -55,6 +55,7 @@ $config['ovtime'] = isset($ovtime) ? intval($ovtime) : 608400;
 $config['jscallback'] = isset($jscallback) ? $jscallback : false;
 $config['customjs'] = isset($customjs) ? $customjs : false;
 $config['showexception'] = isset($showexception) ? $showexception == true : false;
+$config['noResults'] = isset($noResults) ? $noResults : false;
 
 // set the base path
 $path = $modx->config['base_path'] . 'assets/snippets/EasyPoll/';
